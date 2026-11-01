@@ -1,0 +1,84 @@
+# ==========================================
+# Build output (.NET)
+# ==========================================
+
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+
+# ==========================================
+# Visual Studio
+# ==========================================
+
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# ==========================================
+# Visual Studio Code
+# ==========================================
+
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+
+# ==========================================
+# NuGet packages
+# ==========================================
+
+*.nupkg
+**/packages/
+
+# ==========================================
+# Logs
+# ==========================================
+
+*.log
+
+# ==========================================
+# Environment and secrets
+# ==========================================
+
+.env
+.env.*
+!.env.example
+appsettings.Development.json
+secrets.json
+
+# ==========================================
+# Python
+# ==========================================
+
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Python environment and build files
+*.egg-info/
+dist/
+build/
+
+# ==========================================
+# Database files and local backups
+# ==========================================
+
+*.mdf
+*.ldf
+*.bak
+
+# ==========================================
+# Operating system files
+# ==========================================
+
+.DS_Store
+Thumbs.db
+desktop.ini
