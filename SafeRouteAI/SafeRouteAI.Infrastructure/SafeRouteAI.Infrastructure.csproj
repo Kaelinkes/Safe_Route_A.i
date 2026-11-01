@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\SafeRouteAI\SafeRouteAI.Domain\SafeRouteAI.Domain.csproj" />
-    <ProjectReference Include="..\SafeRouteAI\SafeRouteAI.Application\SafeRouteAI.Application.csproj" />
+      <ProjectReference Include="..\SafeRouteAI.Domain\SafeRouteAI.Domain.csproj" />
+      <ProjectReference Include="..\SafeRouteAI.Application\SafeRouteAI.Application.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
