@@ -1,10 +1,10 @@
+
 using System.Text.Json.Serialization;
 using SafeRouteAI.API.Interfaces;
 using SafeRouteAI.API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Register API controllers
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -12,10 +12,12 @@ builder.Services.AddControllers()
             new JsonStringEnumConverter());
     });
 
-// Register OpenAPI documentation
 builder.Services.AddOpenApi();
 
-// Register mock services
+// Standardized API error handling
+builder.Services.AddProblemDetails();
+
+// Register API services
 builder.Services.AddScoped<
     IRiskPredictionService,
     MockRiskPredictionService>();
@@ -26,14 +28,16 @@ builder.Services.AddScoped<
 
 var app = builder.Build();
 
-// OpenAPI documentation
+// Handle unexpected exceptions
+app.UseExceptionHandler();
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
-// Register API endpoints
 app.MapControllers();
 
 app.Run();
+
 public partial class Program { }
