@@ -1,0 +1,245 @@
+@{
+    ViewData["Title"] = "Create account";
+}
+<section class="auth">
+    <div class="auth-art">
+        <span class="logo big" aria-hidden="true">＋</span>
+        <h2>
+            Better journeys start
+            <br />
+            with awareness.
+        </h2>
+        <p>
+            Create an account to prepare for route planning and community
+            reporting features.
+        </p>
+        <b>⌖ &nbsp; South Africa</b>
+    </div>
+    <div class="auth-form">
+        <a asp-controller="Home" asp-action="Index">← Back to explore</a>
+        <div class="eyebrow">JOIN SAFEROUTE AI</div>
+        <h1>Create your account.</h1>
+        <p>A few details and you’re ready to get started.</p>
+        <form id="registerForm" novalidate>
+            <label for="registerName">
+                Name
+                <span class="required-mark">*</span>
+            </label>
+            <input
+                id="registerName"
+                name="name"
+                required
+                maxlength="100"
+                autocomplete="name"
+                placeholder="Your name"
+                aria-describedby="nameError"
+            />
+            <p class="inline-error" id="nameError" role="alert" hidden></p>
+            <label for="registerEmail">
+                Email address
+                <span class="required-mark">*</span>
+            </label>
+            <input
+                id="registerEmail"
+                name="email"
+                type="email"
+                required
+                maxlength="150"
+                autocomplete="email"
+                placeholder="you@example.com"
+                aria-describedby="emailError"
+            />
+            <p
+                class="inline-error"
+                id="emailError"
+                role="alert"
+                hidden
+            ></p>
+            <label for="pw">
+                Password
+                <span class="required-mark">*</span>
+            </label>
+            <div class="password-field">
+                <input
+                    id="pw"
+                    name="password"
+                    type="password"
+                    required
+                    minlength="8"
+                    maxlength="255"
+                    autocomplete="new-password"
+                    placeholder="At least 8 characters"
+                    aria-describedby="passwordError"
+                />
+                <button
+                    class="password-toggle"
+                    type="button"
+                    data-toggle-password="pw"
+                    aria-pressed="false"
+                >
+                    Show
+                </button>
+            </div>
+            <p
+                class="inline-error"
+                id="passwordError"
+                role="alert"
+                hidden
+            ></p>
+            <label for="pw2">
+                Confirm password
+                <span class="required-mark">*</span>
+            </label>
+            <input
+                id="pw2"
+                name="confirmPassword"
+                type="password"
+                required
+                minlength="8"
+                maxlength="255"
+                autocomplete="new-password"
+                placeholder="Enter password again"
+                aria-describedby="confirmError"
+            />
+            <p
+                class="inline-error"
+                id="confirmError"
+                role="alert"
+                hidden
+            ></p>
+            <label class="check">
+                <input
+                    id="responsibleUse"
+                    type="checkbox"
+                    required
+                    aria-describedby="termsError"
+                />
+                I agree to use community reporting responsibly.
+            </label>
+            <p
+                class="inline-error"
+                id="termsError"
+                role="alert"
+                hidden
+            ></p>
+            <p
+                id="registerMessage"
+                class="route-message"
+                role="status"
+                aria-live="polite"
+                hidden
+            ></p>
+            <button class="btn wide" type="submit" id="registerSubmit">
+                Create account →
+            </button>
+            <p class="auth-switch">
+                Already have an account?
+                <a asp-controller="Account" asp-action="Login">Log in</a>
+            </p>
+            <small>Registration is not connected. No account will be created.</small>
+        </form>
+    </div>
+</section>
+@section Scripts {
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const form = document.getElementById("registerForm");
+        const message = document.getElementById("registerMessage");
+        const responsibleUse = document.getElementById("responsibleUse");
+        const termsError = document.getElementById("termsError");
+        const fields = [
+            ["registerName", "nameError", "Please enter your name."],
+            [
+                "registerEmail",
+                "emailError",
+                "Please enter a valid email address.",
+            ],
+            [
+                "pw",
+                "passwordError",
+                "Password must be at least 8 characters long.",
+            ],
+            ["pw2", "confirmError", "The passwords do not match."],
+        ];
+        document
+            .querySelectorAll("[data-toggle-password]")
+            .forEach((button) =>
+                button.addEventListener("click", () => {
+                    const input = document.getElementById(
+                        button.dataset.togglePassword,
+                    );
+                    const visible = input.type === "password";
+                    input.type = visible ? "text" : "password";
+                    button.textContent = visible ? "Hide" : "Show";
+                    button.setAttribute("aria-pressed", String(visible));
+                }),
+            );
+        function fail(fieldId, errorId, text) {
+            const field = document.getElementById(fieldId),
+                error = document.getElementById(errorId);
+            setInlineError(field, error, text);
+            field.focus();
+        }
+        form.addEventListener("submit", (event) => {
+            event.preventDefault();
+            fields.forEach(([id, errorId]) =>
+                setInlineError(
+                    document.getElementById(id),
+                    document.getElementById(errorId),
+                    "",
+                ),
+            );
+            setInlineError(responsibleUse, termsError, "");
+            message.hidden = true;
+            if (!document.getElementById("registerName").value.trim())
+                return fail(
+                    "registerName",
+                    "nameError",
+                    "Please enter your name.",
+                );
+            if (!document.getElementById("registerEmail").checkValidity())
+                return fail(
+                    "registerEmail",
+                    "emailError",
+                    "Please enter a valid email address.",
+                );
+            if (document.getElementById("pw").value.length < 8)
+                return fail(
+                    "pw",
+                    "passwordError",
+                    "Password must be at least 8 characters long.",
+                );
+            if (
+                document.getElementById("pw").value !==
+                document.getElementById("pw2").value
+            )
+                return fail(
+                    "pw2",
+                    "confirmError",
+                    "The passwords do not match.",
+                );
+            if (!responsibleUse.checked) {
+                setInlineError(
+                    responsibleUse,
+                    termsError,
+                    "Please confirm the responsible-use statement.",
+                );
+                responsibleUse.focus();
+                return;
+            }
+            showMessage(
+                "Registration is not connected yet. No account was created.",
+                "error",
+            );
+        });
+        function showMessage(text, type) {
+            message.textContent = text;
+            message.className = `route-message ${type}`;
+            message.hidden = false;
+        }
+        responsibleUse.addEventListener("change", () =>
+            setInlineError(responsibleUse, termsError, ""),
+        );
+    });
+</script>
+}

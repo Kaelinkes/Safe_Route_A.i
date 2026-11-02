@@ -1,0 +1,131 @@
+@{
+    ViewData["Title"] = "Log in";
+}
+<section class="auth">
+    <div class="auth-art">
+        <span class="logo big" aria-hidden="true">✓</span>
+        <h2>
+            Every journey deserves
+            <br />
+            more insight.
+        </h2>
+        <p>
+            Plan with road-safety context built around the places you
+            travel.
+        </p>
+        <b>⌖ &nbsp; Made for South Africa</b>
+    </div>
+    <div class="auth-form">
+        <a asp-controller="Home" asp-action="Index">← Back to explore</a>
+        <div class="eyebrow">WELCOME BACK</div>
+        <h1>Good to see you.</h1>
+        <p>Log in to continue to SafeRoute AI.</p>
+        <form id="loginForm" novalidate>
+            <label for="loginEmail">
+                Email address
+                <span class="required-mark">*</span>
+            </label>
+            <input
+                id="loginEmail"
+                type="email"
+                required
+                maxlength="150"
+                autocomplete="email"
+                placeholder="you@example.com"
+                aria-describedby="loginEmailError"
+            />
+            <p
+                class="inline-error"
+                id="loginEmailError"
+                role="alert"
+                hidden
+            ></p>
+            <label for="loginPassword">
+                Password
+                <span class="required-mark">*</span>
+            </label>
+            <input
+                id="loginPassword"
+                type="password"
+                required
+                autocomplete="current-password"
+                placeholder="Enter your password"
+                aria-describedby="loginPasswordError"
+            />
+            <p
+                class="inline-error"
+                id="loginPasswordError"
+                role="alert"
+                hidden
+            ></p>
+            <label class="check">
+                <input type="checkbox" />
+                Remember me on this device
+            </label>
+            <p
+                id="loginMessage"
+                class="route-message"
+                role="status"
+                aria-live="polite"
+                hidden
+            ></p>
+            <button class="btn wide" id="loginSubmit" type="submit">
+                Log in →
+            </button>
+            <p class="auth-switch">
+                New to SafeRoute AI?
+                <a asp-action="Register">Create an account</a>
+            </p>
+            <small>Authentication is not connected. No credentials will be checked.</small>
+        </form>
+    </div>
+</section>
+@section Scripts {
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const form = document.getElementById("loginForm"),
+            message = document.getElementById("loginMessage");
+        function show(text, type) {
+            message.textContent = text;
+            message.className = `route-message ${type}`;
+            message.hidden = false;
+        }
+        form.addEventListener("submit", (event) => {
+            event.preventDefault();
+            message.hidden = true;
+            const email = document.getElementById("loginEmail"),
+                password = document.getElementById("loginPassword");
+            const emailError = document.getElementById("loginEmailError"),
+                passwordError = document.getElementById(
+                    "loginPasswordError",
+                );
+            setInlineError(email, emailError, "");
+            setInlineError(password, passwordError, "");
+            if (!email.value.trim() || !email.checkValidity()) {
+                setInlineError(
+                    email,
+                    emailError,
+                    "Please enter a valid email address.",
+                );
+                email.focus();
+                return;
+            }
+            email.removeAttribute("aria-invalid");
+            if (!password.value) {
+                setInlineError(
+                    password,
+                    passwordError,
+                    "Please enter your password.",
+                );
+                password.focus();
+                return;
+            }
+            password.removeAttribute("aria-invalid");
+            show(
+                "Login is not connected yet. No credentials were checked.",
+                "error",
+            );
+        });
+    });
+</script>
+}
