@@ -18,22 +18,28 @@ public class ApiContractTests :
         _client = factory.CreateClient();
     }
 
+    // TEST 1: Health endpoint
     [Fact]
     public async Task Health_ReturnsRunningStatus()
     {
         var response = await _client.GetAsync(
             "/api/v1/health");
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(
+            HttpStatusCode.OK,
+            response.StatusCode);
 
         using var json = JsonDocument.Parse(
             await response.Content.ReadAsStringAsync());
 
         Assert.Equal(
             "Running",
-            json.RootElement.GetProperty("status").GetString());
+            json.RootElement
+                .GetProperty("status")
+                .GetString());
     }
 
+    // TEST 2: Risk prediction successful request
     [Fact]
     public async Task RiskPrediction_ReturnsMockResponse()
     {
@@ -49,25 +55,35 @@ public class ApiContractTests :
         };
 
         var response = await _client.PostAsJsonAsync(
-            "/api/v1/risk/predict", request);
+            "/api/v1/risk/predict",
+            request);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(
+            HttpStatusCode.OK,
+            response.StatusCode);
 
         using var json = JsonDocument.Parse(
             await response.Content.ReadAsStringAsync());
 
         Assert.Equal(
             "segment-001",
-            json.RootElement.GetProperty("segmentId").GetString());
+            json.RootElement
+                .GetProperty("segmentId")
+                .GetString());
 
         Assert.Equal(
             "InsufficientData",
-            json.RootElement.GetProperty("riskLevel").GetString());
+            json.RootElement
+                .GetProperty("riskLevel")
+                .GetString());
 
         Assert.True(
-            json.RootElement.GetProperty("isMock").GetBoolean());
+            json.RootElement
+                .GetProperty("isMock")
+                .GetBoolean());
     }
 
+    // TEST 3: Route comparison successful request
     [Fact]
     public async Task RouteComparison_ReturnsTwoMockRoutes()
     {
@@ -86,21 +102,30 @@ public class ApiContractTests :
         };
 
         var response = await _client.PostAsJsonAsync(
-            "/api/v1/routes/compare", request);
+            "/api/v1/routes/compare",
+            request);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(
+            HttpStatusCode.OK,
+            response.StatusCode);
 
         using var json = JsonDocument.Parse(
             await response.Content.ReadAsStringAsync());
 
-        var routes = json.RootElement.GetProperty("routes");
+        var routes = json.RootElement
+            .GetProperty("routes");
 
-        Assert.Equal(2, routes.GetArrayLength());
+        Assert.Equal(
+            2,
+            routes.GetArrayLength());
 
         Assert.True(
-            json.RootElement.GetProperty("isMock").GetBoolean());
+            json.RootElement
+                .GetProperty("isMock")
+                .GetBoolean());
     }
 
+    // TEST 4: Empty segment ID
     [Fact]
     public async Task RiskPrediction_EmptySegment_ReturnsBadRequest()
     {
@@ -114,7 +139,80 @@ public class ApiContractTests :
         };
 
         var response = await _client.PostAsJsonAsync(
-            "/api/v1/risk/predict", request);
+            "/api/v1/risk/predict",
+            request);
+
+        Assert.Equal(
+            HttpStatusCode.BadRequest,
+            response.StatusCode);
+    }
+
+    // TEST 5: Identical origin and destination
+    [Fact]
+    public async Task Routes_IdenticalCoordinates_ReturnsBadRequest()
+    {
+        var request = new
+        {
+            origin = new
+            {
+                latitude = -26.2041,
+                longitude = 28.0473
+            },
+            destination = new
+            {
+                latitude = -26.2041,
+                longitude = 28.0473
+            }
+        };
+
+        var response = await _client.PostAsJsonAsync(
+            "/api/v1/routes/compare",
+            request);
+
+        Assert.Equal(
+            HttpStatusCode.BadRequest,
+            response.StatusCode);
+    }
+
+    // TEST 6: Missing latitude
+    [Fact]
+    public async Task Routes_MissingLatitude_ReturnsBadRequest()
+    {
+        var request = new
+        {
+            origin = new
+            {
+                longitude = 28.0473
+            },
+            destination = new
+            {
+                latitude = -26.1367,
+                longitude = 28.1976
+            }
+        };
+
+        var response = await _client.PostAsJsonAsync(
+            "/api/v1/routes/compare",
+            request);
+
+        Assert.Equal(
+            HttpStatusCode.BadRequest,
+            response.StatusCode);
+    }
+
+    // TEST 7: Empty ML features
+    [Fact]
+    public async Task RiskPrediction_EmptyFeatures_ReturnsBadRequest()
+    {
+        var request = new
+        {
+            segmentId = "segment-001",
+            features = new Dictionary<string, double>()
+        };
+
+        var response = await _client.PostAsJsonAsync(
+            "/api/v1/risk/predict",
+            request);
 
         Assert.Equal(
             HttpStatusCode.BadRequest,
