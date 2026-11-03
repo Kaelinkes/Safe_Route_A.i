@@ -8,4 +8,11 @@ public record RouteOptionDto(
     double DurationMinutes,
     string Geometry);
 
-public record WeatherResult(bool IsAvailable, double Precipitation, double Visibility, double WindSpeed);
+public record WeatherResult(
+    bool IsAvailable,
+    double Precipitation,
+    double Visibility,
+    double WindSpeed,
+    double Temperature,
+    double Humidity,
+    string Condition);
