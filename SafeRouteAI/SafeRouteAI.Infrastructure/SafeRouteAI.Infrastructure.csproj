@@ -1,7 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-      <ProjectReference Include="..\SafeRouteAI.Domain\SafeRouteAI.Domain.csproj" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.14" />
+  </ItemGroup>
+
+  <ItemGroup>
       <ProjectReference Include="..\SafeRouteAI.Application\SafeRouteAI.Application.csproj" />
   </ItemGroup>
 

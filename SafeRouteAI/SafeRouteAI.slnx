@@ -1,7 +1,8 @@
 <Solution>
-  <Project Path="SafeRouteAI.Infrastructure/SafeRouteAI.Infrastructure.csproj" />
   <Project Path="SafeRouteAI.API/SafeRouteAI.API.csproj" />
   <Project Path="SafeRouteAI.Application/SafeRouteAI.Application.csproj" />
   <Project Path="SafeRouteAI.Domain/SafeRouteAI.Domain.csproj" />
+  <Project Path="SafeRouteAI.Infrastructure/SafeRouteAI.Infrastructure.csproj" />
+  <Project Path="SafeRouteAI.Tests/SafeRouteAI.Tests.csproj" Id="72361e79-30ae-4a02-86b9-716b3598dd85" />
   <Project Path="SafeRouteAI.Web/SafeRouteAI.Web.csproj" />
 </Solution>
