@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SafeRouteAI.API.DTOs;
 using SafeRouteAI.API.Interfaces;
+using SafeRouteAI.API.Services;
 
 namespace SafeRouteAI.API.Controllers;
 
@@ -17,27 +18,25 @@ public class RoutesController : ControllerBase
     }
 
     [HttpPost("compare")]
-    [ProducesResponseType(
-        typeof(RouteComparisonResponse),
-        StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<RouteComparisonResponse>> Compare(
+    public async Task<IActionResult> Compare(
         [FromBody] RouteComparisonRequest request,
         CancellationToken cancellationToken)
     {
-        if (request.Origin is null || request.Destination is null)
+        try
         {
-            return BadRequest(new ProblemDetails
+            var result = await _routeService.CompareAsync(
+                request, cancellationToken);
+
+            return Ok(result);
+        }
+        catch (RouteServiceUnavailableException)
+        {
+            return StatusCode(503, new ProblemDetails
             {
-                Title = "Missing coordinates",
-                Detail = "Origin and destination are required.",
-                Status = StatusCodes.Status400BadRequest
+                Title = "Routing service unavailable",
+                Detail = "Real route calculation is not connected yet.",
+                Status = 503
             });
         }
-
-        var result = await _routeService.CompareAsync(
-            request, cancellationToken);
-
-        return Ok(result);
     }
 }

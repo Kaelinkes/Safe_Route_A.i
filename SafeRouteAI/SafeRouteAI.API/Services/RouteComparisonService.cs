@@ -10,13 +10,16 @@ public class RouteComparisonService : IRouteComparisonService
         RouteComparisonRequest request,
         CancellationToken cancellationToken = default)
     {
-        // The backend routing service is not yet available
-        // on this branch. Do not invent route results.
+        throw new RouteServiceUnavailableException(
+            "Route calculation is not available yet. " +
+            "The backend routing service has not been connected.");
+    }
+}
 
-        return Task.FromResult(new RouteComparisonResponse
-        {
-            IsMock = false,
-            Routes = new List<RouteOptionResponse>()
-        });
+public sealed class RouteServiceUnavailableException : Exception
+{
+    public RouteServiceUnavailableException(string message)
+        : base(message)
+    {
     }
 }
