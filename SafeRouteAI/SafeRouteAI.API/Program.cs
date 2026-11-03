@@ -14,21 +14,22 @@ builder.Services.AddControllers()
 
 builder.Services.AddOpenApi();
 
-// Standardized API error handling
 builder.Services.AddProblemDetails();
 
-// Register API services
+// Risk prediction remains unavailable until
+// the ML model is integrated.
 builder.Services.AddScoped<
     IRiskPredictionService,
     MockRiskPredictionService>();
 
+// API-side routing service.
+
 builder.Services.AddScoped<
     IRouteComparisonService,
-    MockRouteComparisonService>();
+    RouteComparisonService>();
 
 var app = builder.Build();
 
-// Handle unexpected exceptions
 app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())

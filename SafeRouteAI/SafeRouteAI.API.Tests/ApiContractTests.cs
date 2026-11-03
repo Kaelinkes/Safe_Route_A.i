@@ -39,7 +39,7 @@ public class ApiContractTests :
                 .GetString());
     }
 
-    // TEST 2: Risk prediction successful request
+    // TEST 2: Risk prediction returns unavailable ML result
     [Fact]
     public async Task RiskPrediction_ReturnsMockResponse()
     {
@@ -83,9 +83,9 @@ public class ApiContractTests :
                 .GetBoolean());
     }
 
-    // TEST 3: Route comparison successful request
+    // TEST 3: Routing is not yet connected
     [Fact]
-    public async Task RouteComparison_ReturnsTwoMockRoutes()
+    public async Task RouteComparison_ReturnsNoRoutesUntilIntegrated()
     {
         var request = new
         {
@@ -116,10 +116,10 @@ public class ApiContractTests :
             .GetProperty("routes");
 
         Assert.Equal(
-            2,
+            0,
             routes.GetArrayLength());
 
-        Assert.True(
+        Assert.False(
             json.RootElement
                 .GetProperty("isMock")
                 .GetBoolean());
