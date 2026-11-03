@@ -9,6 +9,7 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructure(this IServiceCollection services)
     {
         services.AddHttpClient<IWeatherService, WeatherService>(c => c.Timeout = TimeSpan.FromSeconds(10));
+        services.AddHttpClient<IRouteService, RouteService>(c => c.Timeout = TimeSpan.FromSeconds(15));
         return services;
     }
 }
