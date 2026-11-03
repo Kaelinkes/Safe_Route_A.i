@@ -21,10 +21,9 @@ builder.Services.AddHttpClient("OpenMeteo", client =>
     client.Timeout = TimeSpan.FromSeconds(10);
 });
 
-// Risk prediction: ML integration pending
-builder.Services.AddScoped<
-    IRiskPredictionService,
-    MockRiskPredictionService>();
+// ML integration: Mock provider is the default.
+// A real provider can be registered here later.
+builder.Services.AddMlIntegration(builder.Configuration);
 
 // Routing: backend integration pending
 builder.Services.AddScoped<
