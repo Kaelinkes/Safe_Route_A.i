@@ -1,6 +1,5 @@
 
 using System.Text.Json.Serialization;
-using SafeRouteAI.API.Interfaces;
 using SafeRouteAI.API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,20 +14,17 @@ builder.Services.AddControllers()
 builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
 
-// Weather API HTTP client
+// Weather integration
 builder.Services.AddHttpClient("OpenMeteo", client =>
 {
     client.Timeout = TimeSpan.FromSeconds(10);
 });
 
-// ML integration: Mock provider is the default.
-// A real provider can be registered here later.
+// ML integration
 builder.Services.AddMlIntegration(builder.Configuration);
 
-// Routing: backend integration pending
-builder.Services.AddScoped<
-    IRouteComparisonService,
-    RouteComparisonService>();
+// Routing integration
+builder.Services.AddRoutingIntegration(builder.Configuration);
 
 var app = builder.Build();
 
