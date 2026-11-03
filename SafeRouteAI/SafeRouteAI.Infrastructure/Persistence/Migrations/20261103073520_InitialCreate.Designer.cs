@@ -1276,7 +1276,7 @@ namespace SafeRouteAI.Infrastructure.Persistence.Migrations
                         {
                             t.HasCheckConstraint("ck_route_segments_sequence", "[seq_no] > 0");
 
-                            t.HasCheckConstraint("ck_route_segments_travel_time", "[est_travel_time_s] IS NULL OR [est_travel_time_s] >= 0");
+                            t.HasCheckConstraint("ck_route_segments_travel_time", "[estimated_travel_time_s] IS NULL OR [estimated_travel_time_s] >= 0");
                         });
                 });
 

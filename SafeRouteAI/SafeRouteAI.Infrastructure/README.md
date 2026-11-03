@@ -7,7 +7,7 @@
 From the solution directory, set a connection string with user-secrets. Substitute the host, user, and password for your SQL Server instance:
 
 ```sh
-dotnet user-secrets set --project SafeRouteAI.API "ConnectionStrings:SafeRouteDatabase" "Server=localhost,1433;Database=SafeRouteAI;User Id=sa;Password=<your-password>;Encrypt=True;TrustServerCertificate=True"
+dotnet user-secrets set --project SafeRouteAI.API "ConnectionStrings:SafeRouteDatabase" "Server=localhost,1433;Database=SafeRouteAIDataBase;User Id=sa;Password=<Password123!Aa>;Encrypt=True;TrustServerCertificate=True"
 ```
 
 Do not commit passwords or production connection strings. On macOS, SQL Server must be running in Docker or hosted remotely.

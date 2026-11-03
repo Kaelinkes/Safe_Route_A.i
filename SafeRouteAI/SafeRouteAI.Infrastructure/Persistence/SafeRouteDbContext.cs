@@ -298,7 +298,7 @@ public sealed class SafeRouteDbContext(DbContextOptions<SafeRouteDbContext> opti
             entity.ToTable("route_segments", table =>
             {
                 table.HasCheckConstraint("ck_route_segments_sequence", "[seq_no] > 0");
-                table.HasCheckConstraint("ck_route_segments_travel_time", "[est_travel_time_s] IS NULL OR [est_travel_time_s] >= 0");
+                table.HasCheckConstraint("ck_route_segments_travel_time", "[estimated_travel_time_s] IS NULL OR [estimated_travel_time_s] >= 0");
             });
             entity.HasKey(x => new { x.RouteId, x.SeqNo });
             entity.HasIndex(x => x.SegmentId);
