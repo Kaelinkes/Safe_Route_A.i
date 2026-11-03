@@ -13,17 +13,20 @@ builder.Services.AddControllers()
     });
 
 builder.Services.AddOpenApi();
-
 builder.Services.AddProblemDetails();
 
-// Risk prediction remains unavailable until
-// the ML model is integrated.
+// Weather API HTTP client
+builder.Services.AddHttpClient("OpenMeteo", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+
+// Risk prediction: ML integration pending
 builder.Services.AddScoped<
     IRiskPredictionService,
     MockRiskPredictionService>();
 
-// API-side routing service.
-
+// Routing: backend integration pending
 builder.Services.AddScoped<
     IRouteComparisonService,
     RouteComparisonService>();
