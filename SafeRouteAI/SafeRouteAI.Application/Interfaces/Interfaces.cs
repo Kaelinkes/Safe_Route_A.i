@@ -4,9 +4,10 @@ using SafeRouteAI.Domain.Enums;
 
 namespace SafeRouteAI.Application.Interfaces;
 
-public interface IRoutingService
+public interface IRouteService
 {
-    Task<List<RouteOptionDto>> GetRoutesAsync(Coordinate origin, Coordinate destination);
+    Task<List<RouteOptionDto>> GetRoutesAsync(
+        Coordinate start, Coordinate destination, CancellationToken cancellationToken = default);
 }
 
 public interface IWeatherService
