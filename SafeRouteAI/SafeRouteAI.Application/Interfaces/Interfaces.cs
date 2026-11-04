@@ -15,6 +15,12 @@ public interface IWeatherService
     Task<WeatherResult> GetWeatherAsync(Coordinate location, DateTime time);
 }
 
+public interface IRiskService
+{
+    Task<RiskAssessmentDto> AssessAsync(
+        RouteOptionDto route, WeatherResult weather, CancellationToken cancellationToken = default);
+}
+
 public interface ICommunityReportRepository
 {
     Task AddAsync(CommunityReport report);

@@ -1,4 +1,6 @@
-﻿namespace SafeRouteAI.Application.DTOs;
+﻿using SafeRouteAI.Domain.Enums;
+
+namespace SafeRouteAI.Application.DTOs;
 
 public record Coordinate(double Lat, double Lon);
 
@@ -16,3 +18,9 @@ public record WeatherResult(
     double Temperature,
     double Humidity,
     string Condition);
+
+public record RiskAssessmentDto(
+    AssessmentStatus Status,
+    double? Score,
+    RiskLevel? Level,
+    List<string> Factors);
