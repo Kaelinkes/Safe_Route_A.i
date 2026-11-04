@@ -5,6 +5,7 @@ using SafeRouteAI.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using SafeRouteAI.Infrastructure.Data;
+using SafeRouteAI.Application.Auth;
 
 namespace SafeRouteAI.Infrastructure;
 
@@ -22,6 +23,8 @@ public static class DependencyInjection
         ?? AppDbContext.DefaultConnection));
 
         services.AddScoped<ICommunityReportRepository, CommunityReportRepository>();
+        services.AddSingleton(TimeProvider.System);
+        services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
         return services;
     }
 }
