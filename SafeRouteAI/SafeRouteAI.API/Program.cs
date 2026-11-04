@@ -1,4 +1,6 @@
 using SafeRouteAI.Infrastructure;
+using Microsoft.EntityFrameworkCore;
+using SafeRouteAI.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,6 +10,14 @@ builder.Services.AddOpenApi();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
+
+await using (var scope = app.Services.CreateAsyncScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<SafeRouteDbContext>();
+    app.Logger.LogInformation("Checking SafeRoute database and applying pending migrations.");
+    await db.Database.MigrateAsync();
+    app.Logger.LogInformation("SafeRoute database is ready.");
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

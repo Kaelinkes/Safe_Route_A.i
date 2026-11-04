@@ -23,6 +23,12 @@ dotnet ef migrations add InitialCreate --project SafeRouteAI.Infrastructure --st
 dotnet ef database update --project SafeRouteAI.Infrastructure --startup-project SafeRouteAI.API
 ```
 
-The API validates that the connection string is configured at startup. Database updates are applied explicitly with `dotnet ef database update`; the application does not mutate the database schema automatically at startup.
+At startup, the API validates that the connection string is configured and calls
+EF Core `MigrateAsync`. If the configured database does not exist, the SQL Server
+provider creates it, then applies pending migrations. The SQL login must be
+allowed to connect to the SQL Server and create the database, and must have
+permissions to apply schema changes. Startup fails if the server is unavailable
+or migration application fails. You can also apply migrations explicitly with
+`dotnet ef database update`.
 
 The model uses SQL Server `datetimeoffset`, `bit`, `nvarchar(max)`, identity columns, check constraints, filtered indexes, and explicit foreign-key delete behavior. Review each generated migration before applying it to a shared database.
