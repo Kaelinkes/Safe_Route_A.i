@@ -24,3 +24,8 @@ public record RiskAssessmentDto(
     double? Score,
     RiskLevel? Level,
     List<string> Factors);
+public record RankedRouteDto(
+    int Rank, 
+    RouteOptionDto Route,
+    RiskAssessmentDto Risk, 
+    bool IsHighRisk);
