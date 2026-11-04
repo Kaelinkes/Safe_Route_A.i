@@ -1,4 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap");
 :root {
     --ink: #172c3d;
     --navy: #142c40;
@@ -2620,4 +2619,74 @@ textarea:focus-visible {
 }
 .privacy-page .privacy-section p {
     margin: 0;
+}
+/* Route planner weather response panel */
+.weather-panel {
+    border-top: 1px solid var(--line);
+    padding: 16px 18px 18px;
+    min-width: 0;
+}
+.weather-panel-heading h3 {
+    margin: 0;
+    font-size: 14px;
+}
+.weather-panel-heading p,
+.weather-status {
+    margin: 5px 0 0;
+    color: #71808a;
+    font-size: 12px;
+    line-height: 1.5;
+}
+.weather-status.loading::before {
+    content: "◌ ";
+}
+.weather-status.success {
+    color: var(--teal);
+}
+.weather-status.error,
+.weather-status.unavailable {
+    color: #9b382f;
+}
+.weather-readings {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin: 14px 0 0;
+}
+.weather-readings > div {
+    min-width: 0;
+    padding: 10px;
+    border-radius: 8px;
+    background: #f4f7f7;
+}
+.weather-readings dt {
+    color: #71808a;
+    font-size: 10px;
+}
+.weather-readings dd {
+    margin: 4px 0 0;
+    overflow-wrap: anywhere;
+    color: var(--ink);
+    font-size: 12px;
+    font-weight: 700;
+}
+@media (max-width: 560px) {
+    .weather-panel {
+        padding: 14px 12px;
+    }
+    .weather-readings {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }

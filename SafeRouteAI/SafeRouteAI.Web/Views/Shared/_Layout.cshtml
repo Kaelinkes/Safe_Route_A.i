@@ -104,6 +104,16 @@
                     <span class="nav-unavailable" aria-disabled="true">Account (unavailable)</span>
                 </div>
             </nav>
+            <div class="demo-role-control">
+                <label for="demoRole">Demo role</label>
+                <select id="demoRole" aria-label="Demo navigation role" aria-describedby="demoRoleNote">
+                    <option value="visitor">Visitor</option>
+                    <option value="user">Registered user</option>
+                    <option value="admin">Administrator</option>
+                </select>
+                <span aria-hidden="true">Preview only</span>
+                <span id="demoRoleNote" class="visually-hidden">This selector only changes visible navigation. It does not authenticate users or enforce permissions.</span>
+            </div>
         </header>
         <main id="mainContent">
             @if (

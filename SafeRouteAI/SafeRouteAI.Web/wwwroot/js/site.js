@@ -38,16 +38,54 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    document.querySelectorAll(".nav a").forEach((link) => {
-        const rawHref = link.getAttribute("href");
-        if (!rawHref || rawHref === "#" || rawHref.startsWith("#")) return;
-        const target = new URL(link.href, window.location.href);
-        if (
-            target.pathname.toLowerCase() === window.location.pathname.toLowerCase() &&
-            target.hash === window.location.hash
-        ) {
-            link.setAttribute("aria-current", "page");
+    function updateActiveNavigation() {
+        nav?.querySelectorAll('a[aria-current="page"]').forEach((link) =>
+            link.removeAttribute("aria-current"),
+        );
+        nav?.querySelectorAll(".role-nav:not([hidden]) a").forEach((link) => {
+            const rawHref = link.getAttribute("href");
+            if (!rawHref || rawHref === "#" || rawHref.startsWith("#")) return;
+            const target = new URL(link.href, window.location.href);
+            if (
+                target.pathname.toLowerCase() === window.location.pathname.toLowerCase() &&
+                target.hash === window.location.hash
+            ) {
+                link.setAttribute("aria-current", "page");
+            }
+        });
+    }
+
+    const rolePreview = document.getElementById("demoRole");
+    const availableRoles = new Set(["visitor", "user", "admin"]);
+    function applyDemoRole(role, persist = false) {
+        const activeRole = availableRoles.has(role) ? role : "visitor";
+        document.querySelectorAll("[data-role-nav]").forEach((roleNav) => {
+            roleNav.hidden = roleNav.dataset.roleNav !== activeRole;
+        });
+        document.querySelectorAll('[data-role-footer="user"]').forEach((item) => {
+            item.hidden = activeRole !== "user";
+        });
+        if (rolePreview) rolePreview.value = activeRole;
+        updateActiveNavigation();
+        if (persist) {
+            try {
+                sessionStorage.setItem("saferoute-demo-role", activeRole);
+            } catch {
+                /* Role preview still works when session storage is unavailable. */
+            }
         }
+    }
+
+    let savedRole = "visitor";
+    try {
+        savedRole = sessionStorage.getItem("saferoute-demo-role") || savedRole;
+    } catch {
+        /* Visitor navigation is the default when session storage is unavailable. */
+    }
+    applyDemoRole(savedRole);
+    rolePreview?.addEventListener("change", () => {
+        applyDemoRole(rolePreview.value, true);
+        closeMenu(false);
     });
 
     document.getElementById("swap")?.addEventListener("click", () => {
