@@ -1,6 +1,9 @@
 
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using SafeRouteAI.API.Interfaces;
 using SafeRouteAI.API.Services.BackendContracts;
+using SafeRouteAI.Infrastructure;
 
 namespace SafeRouteAI.API.Services;
 
@@ -26,9 +29,18 @@ public static class RoutingIntegrationExtensions
                 break;
 
             case "backend":
+                // Make configuration available to backend services,
+                // including RouteService.
+                services.AddSingleton<IConfiguration>(configuration);
+
+                // Register backend routing, weather, fake risk,
+                // and route comparison services.
+                services.AddInfrastructure();
+
+                // Connect the API adapter to the real backend.
                 services.AddScoped<
                     IBackendRouteClient,
-                    UnavailableBackendRouteClient>();
+                    RealBackendRouteClient>();
 
                 services.AddScoped<
                     IRouteComparisonService,
