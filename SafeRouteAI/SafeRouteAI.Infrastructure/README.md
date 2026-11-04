@@ -32,3 +32,9 @@ or migration application fails. You can also apply migrations explicitly with
 `dotnet ef database update`.
 
 The model uses SQL Server `datetimeoffset`, `bit`, `nvarchar(max)`, identity columns, check constraints, filtered indexes, and explicit foreign-key delete behavior. Review each generated migration before applying it to a shared database.
+
+## Integration tests
+
+See [the Infrastructure.Tests README](../SafeRouteAI.Infrastructure.Tests/README.md)
+for configuring a disposable SQL Server test database and running the EF Core
+insert/read/update integration test.
