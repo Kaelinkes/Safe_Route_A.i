@@ -1,9 +1,10 @@
-﻿using System.Net.Http.Json;
-using System.Text.Json;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using SafeRouteAI.Application.DTOs;
 using SafeRouteAI.Application.Interfaces;
 using SafeRouteAI.Application.Validation;
+using System.Net;
+using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace SafeRouteAI.Infrastructure.Services;
 
@@ -31,11 +32,19 @@ public class RouteService : IRouteService
         var coords = new[] { new[] { start.Lon, start.Lat }, new[] { destination.Lon, destination.Lat } };
 
         // Ask for alternatives first; ORS rejects this for long trips, so retry with one route
-        var response = await SendAsync(new { coordinates = coords, alternative_routes = new { target_count = 3 } }, cancellationToken);
-        if (!response.IsSuccessStatusCode)
+        var response = await SendAsync(
+    new { coordinates = coords, alternative_routes = new { target_count = 3 } }, cancellationToken);
+
+        // Only retry when ORS rejects the alternatives option (400 mentioning "alternative").
+        // Anything else (bad key, rate limit, server error) falls through and throws.
+        if (response.StatusCode == HttpStatusCode.BadRequest)
         {
-            response.Dispose();
-            response = await SendAsync(new { coordinates = coords }, cancellationToken);
+            var error = await response.Content.ReadAsStringAsync(cancellationToken);
+            if (error.Contains("alternative", StringComparison.OrdinalIgnoreCase))
+            {
+                response.Dispose();
+                response = await SendAsync(new { coordinates = coords }, cancellationToken);
+            }
         }
 
         using (response)
