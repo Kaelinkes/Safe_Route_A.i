@@ -1,25 +1,44 @@
 
 using SafeRouteAI.API.DTOs;
 using SafeRouteAI.API.Interfaces;
+using SafeRouteAI.API.Services.BackendContracts;
 
 namespace SafeRouteAI.API.Services;
 
-/// <summary>
-/// Integration point for the backend routing service.
-/// The actual IRouteService implementation is maintained
-/// by the backend teammate and is not yet available
-/// on this feature branch.
-/// </summary>
 public sealed class BackendRouteComparisonService
     : IRouteComparisonService
 {
-    public Task<RouteComparisonResponse> CompareAsync(
+    private readonly IBackendRouteClient _backend;
+
+    public BackendRouteComparisonService(
+        IBackendRouteClient backend)
+    {
+        _backend = backend;
+    }
+
+    public async Task<RouteComparisonResponse> CompareAsync(
         RouteComparisonRequest request,
         CancellationToken cancellationToken = default)
     {
-        cancellationToken.ThrowIfCancellationRequested();
+        ArgumentNullException.ThrowIfNull(request);
 
-        throw new RouteServiceUnavailableException(
-            "Backend routing is not connected yet.");
+        if (request.Origin?.Latitude is not double originLat ||
+            request.Origin.Longitude is not double originLon ||
+            request.Destination?.Latitude is not double destinationLat ||
+            request.Destination.Longitude is not double destinationLon)
+        {
+            throw new ArgumentException(
+                "Valid origin and destination coordinates are required.",
+                nameof(request));
+        }
+
+        var routes = await _backend.CompareAsync(
+            originLat,
+            originLon,
+            destinationLat,
+            destinationLon,
+            cancellationToken);
+
+        return BackendRouteResponseMapper.Map(routes);
     }
 }

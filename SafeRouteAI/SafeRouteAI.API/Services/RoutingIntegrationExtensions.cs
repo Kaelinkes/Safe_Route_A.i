@@ -1,5 +1,6 @@
 
 using SafeRouteAI.API.Interfaces;
+using SafeRouteAI.API.Services.BackendContracts;
 
 namespace SafeRouteAI.API.Services;
 
@@ -25,6 +26,10 @@ public static class RoutingIntegrationExtensions
                 break;
 
             case "backend":
+                services.AddScoped<
+                    IBackendRouteClient,
+                    UnavailableBackendRouteClient>();
+
                 services.AddScoped<
                     IRouteComparisonService,
                     BackendRouteComparisonService>();
