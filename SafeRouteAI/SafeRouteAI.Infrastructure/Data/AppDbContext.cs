@@ -1,27 +1,31 @@
 using Microsoft.EntityFrameworkCore;
 using SafeRouteAI.Domain.Entities;
 
-namespace SafeRouteAI.Infrastructure.Persistence;
+namespace SafeRouteAI.Infrastructure.Data;
 
-public sealed class SafeRouteDbContext(DbContextOptions<SafeRouteDbContext> options)
-    : DbContext(options)
+public class AppDbContext : DbContext
 {
+    public const string DefaultConnection =
+        "Server=(localdb)\\MSSQLLocalDB;Database=SafeRouteAI;Trusted_Connection=True;TrustServerCertificate=True";
+
+    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+
     public DbSet<User> Users => Set<User>();
     public DbSet<Route> Routes => Set<Route>();
     public DbSet<RouteOption> RouteOptions => Set<RouteOption>();
     public DbSet<RouteOptionRoadSegment> RouteOptionRoadSegments => Set<RouteOptionRoadSegment>();
     public DbSet<RoadSegment> RoadSegments => Set<RoadSegment>();
     public DbSet<CommunityReport> CommunityReports => Set<CommunityReport>();
-    public DbSet<RiskAssessment> RiskAssessments => Set<RiskAssessment>();
     public DbSet<WeatherLog> WeatherLogs => Set<WeatherLog>();
+    public DbSet<RiskAssessment> RiskAssessments => Set<RiskAssessment>();
     public DbSet<ModelVersion> ModelVersions => Set<ModelVersion>();
     public DbSet<AccidentRecord> AccidentRecords => Set<AccidentRecord>();
     public DbSet<RiskExplanation> RiskExplanations => Set<RiskExplanation>();
     public DbSet<RouteRiskLog> RouteRiskLogs => Set<RouteRiskLog>();
 
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    protected override void OnModelCreating(ModelBuilder b)
     {
-        foreach (var entity in modelBuilder.Model.GetEntityTypes())
+        foreach (var entity in b.Model.GetEntityTypes())
         {
             entity.SetTableName(ToSnakeCase(entity.ClrType.Name) + "s");
 
@@ -31,13 +35,13 @@ public sealed class SafeRouteDbContext(DbContextOptions<SafeRouteDbContext> opti
             }
         }
 
-        modelBuilder.Entity<User>(entity =>
+        b.Entity<User>(entity =>
         {
             entity.HasKey(x => x.UserID);
             entity.Property(x => x.UserID).ValueGeneratedOnAdd();
         });
 
-        modelBuilder.Entity<Route>(entity =>
+        b.Entity<Route>(entity =>
         {
             entity.HasKey(x => x.RouteID);
             entity.Property(x => x.RouteID).ValueGeneratedOnAdd();
@@ -48,7 +52,7 @@ public sealed class SafeRouteDbContext(DbContextOptions<SafeRouteDbContext> opti
                 .OnDelete(DeleteBehavior.NoAction);
         });
 
-        modelBuilder.Entity<RouteOption>(entity =>
+        b.Entity<RouteOption>(entity =>
         {
             entity.HasKey(x => x.RouteOptionID);
             entity.Property(x => x.RouteOptionID).ValueGeneratedOnAdd();
@@ -59,7 +63,7 @@ public sealed class SafeRouteDbContext(DbContextOptions<SafeRouteDbContext> opti
                 .OnDelete(DeleteBehavior.NoAction);
         });
 
-        modelBuilder.Entity<RouteOptionRoadSegment>(entity =>
+        b.Entity<RouteOptionRoadSegment>(entity =>
         {
             entity.HasKey(x => new { x.RouteOptionID, x.RoadSegmentID });
             entity.HasIndex(x => new { x.RouteOptionID, x.SegmentOrder });
@@ -73,7 +77,7 @@ public sealed class SafeRouteDbContext(DbContextOptions<SafeRouteDbContext> opti
                 .OnDelete(DeleteBehavior.NoAction);
         });
 
-        modelBuilder.Entity<RoadSegment>(entity =>
+        b.Entity<RoadSegment>(entity =>
         {
             entity.HasKey(x => x.RoadSegmentID);
             entity.Property(x => x.RoadSegmentID).ValueGeneratedOnAdd();
@@ -85,7 +89,7 @@ public sealed class SafeRouteDbContext(DbContextOptions<SafeRouteDbContext> opti
             entity.Property(x => x.RoadName).IsRequired(false);
         });
 
-        modelBuilder.Entity<CommunityReport>(entity =>
+        b.Entity<CommunityReport>(entity =>
         {
             entity.HasKey(x => x.ReportID);
             entity.Property(x => x.ReportID).ValueGeneratedOnAdd();
@@ -105,7 +109,7 @@ public sealed class SafeRouteDbContext(DbContextOptions<SafeRouteDbContext> opti
                 .OnDelete(DeleteBehavior.NoAction);
         });
 
-        modelBuilder.Entity<RiskAssessment>(entity =>
+        b.Entity<RiskAssessment>(entity =>
         {
             entity.HasKey(x => x.RiskAssessmentID);
             entity.Property(x => x.RiskAssessmentID).ValueGeneratedOnAdd();
@@ -123,7 +127,7 @@ public sealed class SafeRouteDbContext(DbContextOptions<SafeRouteDbContext> opti
                 .OnDelete(DeleteBehavior.NoAction);
         });
 
-        modelBuilder.Entity<WeatherLog>(entity =>
+        b.Entity<WeatherLog>(entity =>
         {
             entity.HasKey(x => x.WeatherLogID);
             entity.Property(x => x.WeatherLogID).ValueGeneratedOnAdd();
@@ -132,13 +136,13 @@ public sealed class SafeRouteDbContext(DbContextOptions<SafeRouteDbContext> opti
             entity.HasIndex(x => new { x.Latitude, x.Longitude, x.DateTime });
         });
 
-        modelBuilder.Entity<ModelVersion>(entity =>
+        b.Entity<ModelVersion>(entity =>
         {
             entity.HasKey(x => x.ModelVersionID);
             entity.Property(x => x.ModelVersionID).ValueGeneratedOnAdd();
         });
 
-        modelBuilder.Entity<AccidentRecord>(entity =>
+        b.Entity<AccidentRecord>(entity =>
         {
             entity.HasKey(x => x.AccidentID);
             entity.Property(x => x.AccidentID).ValueGeneratedOnAdd();
@@ -149,13 +153,13 @@ public sealed class SafeRouteDbContext(DbContextOptions<SafeRouteDbContext> opti
             entity.HasIndex(x => new { x.Latitude, x.Longitude, x.DateTime });
         });
 
-        modelBuilder.Entity<RiskExplanation>(entity =>
+        b.Entity<RiskExplanation>(entity =>
         {
             entity.HasKey(x => x.RiskExplanationID);
             entity.Property(x => x.RiskExplanationID).ValueGeneratedOnAdd();
         });
 
-        modelBuilder.Entity<RouteRiskLog>(entity =>
+        b.Entity<RouteRiskLog>(entity =>
         {
             entity.HasKey(x => x.RouteRiskLogID);
             entity.Property(x => x.RouteRiskLogID).ValueGeneratedOnAdd();

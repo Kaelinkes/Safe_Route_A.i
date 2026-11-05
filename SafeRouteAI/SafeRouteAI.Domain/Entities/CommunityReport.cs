@@ -6,7 +6,6 @@ public class CommunityReport
 
     public int UserID { get; set; }
 
-    // Coordinates
     public decimal Latitude { get; set; }
 
     public decimal Longitude { get; set; }
@@ -23,7 +22,6 @@ public class CommunityReport
 
     public DateTime? ReviewedAt { get; set; }
 
-    // Navigation properties
     public User? User { get; set; }
 
     public User? ReviewedByAdmin { get; set; }

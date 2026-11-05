@@ -13,6 +13,5 @@ public class Route
 
     public DateTime RequestDateTime { get; set; }
 
-    // Navigation property
     public User? User { get; set; }
 }

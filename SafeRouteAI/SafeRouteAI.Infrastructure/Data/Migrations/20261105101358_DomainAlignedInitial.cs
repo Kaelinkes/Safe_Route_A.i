@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace SafeRouteAI.Infrastructure.Persistence.Migrations
+namespace SafeRouteAI.Infrastructure.Data.Migrations
 {
     /// <inheritdoc />
     public partial class DomainAlignedInitial : Migration

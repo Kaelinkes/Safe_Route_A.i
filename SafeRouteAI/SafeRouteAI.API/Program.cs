@@ -1,25 +1,14 @@
-using SafeRouteAI.Infrastructure;
 using Microsoft.EntityFrameworkCore;
-using SafeRouteAI.Infrastructure.Persistence;
+using SafeRouteAI.Infrastructure;
+using SafeRouteAI.Infrastructure.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddInfrastructure();
 
 var app = builder.Build();
 
-await using (var scope = app.Services.CreateAsyncScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<SafeRouteDbContext>();
-    app.Logger.LogInformation("Checking SafeRoute database and applying pending migrations.");
-    await db.Database.MigrateAsync();
-    app.Logger.LogInformation("SafeRoute database is ready.");
-}
-
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -27,24 +16,28 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+await using (var scope = app.Services.CreateAsyncScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    app.Logger.LogInformation("Applying pending database migrations.");
+    await db.Database.MigrateAsync();
+    app.Logger.LogInformation("Database migrations are complete.");
+}
+
 var summaries = new[]
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
+    "Freezing", "Bracing", "Chilly", "Cool", "Mild",
+    "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
 };
 
 app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
+    Enumerable.Range(1, 5)
+        .Select(index => new WeatherForecast(
             DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
             Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+            summaries[Random.Shared.Next(summaries.Length)]))
+        .ToArray())
+    .WithName("GetWeatherForecast");
 
 app.Run();
 

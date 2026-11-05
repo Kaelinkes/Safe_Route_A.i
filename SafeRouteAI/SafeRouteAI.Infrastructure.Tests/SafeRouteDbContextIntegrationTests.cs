@@ -3,20 +3,20 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using SafeRouteAI.Domain.Entities;
-using SafeRouteAI.Infrastructure.Persistence;
+using SafeRouteAI.Infrastructure.Data;
 
 namespace SafeRouteAI.Infrastructure.Tests;
 
-public sealed class SafeRouteDbContextIntegrationTests
+public sealed class AppDbContextIntegrationTests
 {
     [Fact]
     public void ModelContainsOnlyDomainEntitiesAndNoCheckConstraints()
     {
-        var options = new DbContextOptionsBuilder<SafeRouteDbContext>()
+        var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseSqlServer("Server=localhost;Database=SafeRouteModelTest;User Id=test;Password=test;TrustServerCertificate=True")
             .Options;
 
-        using var db = new SafeRouteDbContext(options);
+        using var db = new AppDbContext(options);
         var expectedEntities = typeof(User).Assembly.GetTypes()
             .Where(type => type.IsClass &&
                            !type.IsAbstract &&
@@ -78,11 +78,11 @@ public sealed class SafeRouteDbContextIntegrationTests
                 "Integration tests require a dedicated database whose name contains 'Test'.");
         }
 
-        var options = new DbContextOptionsBuilder<SafeRouteDbContext>()
+        var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseSqlServer(sqlConnectionString.ConnectionString)
             .Options;
 
-        await using var db = new SafeRouteDbContext(options);
+        await using var db = new AppDbContext(options);
         await db.Database.MigrateAsync();
 
         await using var transaction = await db.Database.BeginTransactionAsync();

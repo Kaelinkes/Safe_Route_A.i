@@ -1,8 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace SafeRouteAI.Infrastructure.Persistence.Migrations
+namespace SafeRouteAI.Infrastructure.Data.Migrations
 {
     /// <inheritdoc />
     public partial class AllowAnonymousRoutes : Migration
