@@ -39,10 +39,10 @@ Both routes belong to Seed Route User.
 
 ## Weather observations
 
-| Location (latitude, longitude) | Observed (UTC) | Precipitation | Visibility | Wind speed |
-|---|---|---:|---:|---:|
-| (-26.205000, 28.050000) | 2026-01-16 08:00 | 0.0 | 10.0 | 12.5 |
-| (-26.207000, 28.053000) | 2026-01-16 08:00 | 0.2 | 8.0 | 18.0 |
+| Location (latitude, longitude) | Observed (UTC) | Precipitation | Humidity | Visibility | Wind speed |
+|---|---|---:|---:|---:|---:|
+| (-26.205000, 28.050000) | 2026-01-16 08:00 | 0.0 | 45.0 | 10.0 | 12.5 |
+| (-26.207000, 28.053000) | 2026-01-16 08:00 | 0.2 | 52.0 | 8.0 | 18.0 |
 
 The Domain model does not attach units to these numeric weather values; the
 values are illustrative sample data.

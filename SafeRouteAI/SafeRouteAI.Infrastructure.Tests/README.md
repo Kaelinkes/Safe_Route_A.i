@@ -6,7 +6,7 @@ checks the SQL Server provider, migrations, and persisted data.
 
 ## What the current test verifies
 
-`SafeRouteDbContextIntegrationTests.AccidentRecord_CanBeInsertedReadAndUpdated`
+`SafeRouteDbContextIntegrationTests.DomainEntities_CanBeInsertedReadAndUpdated_AndRouteCanBeAnonymous`
 does the following:
 
 1. Reads `SAFEROUTE_TEST_CONNECTION_STRING` from the test process environment.
@@ -16,16 +16,22 @@ does the following:
 4. Inserts a Domain `AccidentRecord` and saves it.
 5. Reads it back without tracking and verifies its initial severity.
 6. Updates the severity, saves, reads it back again, and verifies the change.
-7. Rolls back the transaction so the test row is not retained.
+7. Inserts and reads a route with no user ID to confirm anonymous route requests
+   are supported.
+8. Rolls back the transaction so the test rows are not retained.
 
 The companion model test verifies that EF includes exactly the Domain entity
-types and defines no SQL check constraints.
+types, defines no SQL check constraints, maps route ownership as nullable, and
+contains the intended query indexes.
 
 The migration step itself is not rolled back; schema changes remain in the
-test database. The current migration set is a fresh baseline for the Domain
-schema. Use a newly created or disposable test database; do not apply it to a
-production or important development database. If the test database has the
-previous migration history/schema, recreate it before running this test.
+test database. The initial migration creates the Domain schema, and
+`AllowAnonymousRoutes` makes `routes.user_id` nullable. Use a disposable test
+database, never a production or important development database. If the
+database already has the initial migration recorded, the pending nullable
+column migration can be applied without recreating it. If tables exist without
+matching EF migration history, inspect the schema and history before running
+the test; do not reset a database with data to preserve.
 
 ## Prerequisites
 

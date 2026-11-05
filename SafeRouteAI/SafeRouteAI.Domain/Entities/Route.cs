@@ -5,7 +5,7 @@ public class Route
 {
     public int RouteID { get; set; }
 
-    public int UserID { get; set; }
+    public int? UserID { get; set; }
 
     public string Origin { get; set; } = string.Empty;
 

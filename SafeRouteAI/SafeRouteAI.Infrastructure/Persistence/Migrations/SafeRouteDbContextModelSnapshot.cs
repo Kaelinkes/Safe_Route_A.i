@@ -55,6 +55,8 @@ namespace SafeRouteAI.Infrastructure.Persistence.Migrations
 
                     b.HasKey("AccidentID");
 
+                    b.HasIndex("Latitude", "Longitude", "DateTime");
+
                     b.ToTable("accident_records");
                 });
 
@@ -108,6 +110,8 @@ namespace SafeRouteAI.Infrastructure.Persistence.Migrations
                         .HasColumnName("user_id");
 
                     b.HasKey("ReportID");
+
+                    b.HasIndex("ReportDateTime");
 
                     b.HasIndex("ReviewedByAdminID");
 
@@ -284,13 +288,13 @@ namespace SafeRouteAI.Infrastructure.Persistence.Migrations
                         .HasColumnType("datetime2")
                         .HasColumnName("request_date_time");
 
-                    b.Property<int>("UserID")
+                    b.Property<int?>("UserID")
                         .HasColumnType("int")
                         .HasColumnName("user_id");
 
                     b.HasKey("RouteID");
 
-                    b.HasIndex("UserID");
+                    b.HasIndex("UserID", "RequestDateTime");
 
                     b.ToTable("routes");
                 });
@@ -336,7 +340,7 @@ namespace SafeRouteAI.Infrastructure.Persistence.Migrations
 
                     b.HasKey("RouteOptionID");
 
-                    b.HasIndex("RouteID");
+                    b.HasIndex("RouteID", "Rank");
 
                     b.ToTable("route_options");
                 });
@@ -358,6 +362,8 @@ namespace SafeRouteAI.Infrastructure.Persistence.Migrations
                     b.HasKey("RouteOptionID", "RoadSegmentID");
 
                     b.HasIndex("RoadSegmentID");
+
+                    b.HasIndex("RouteOptionID", "SegmentOrder");
 
                     b.ToTable("route_option_road_segments");
                 });
@@ -386,7 +392,7 @@ namespace SafeRouteAI.Infrastructure.Persistence.Migrations
 
                     b.HasKey("RouteRiskLogID");
 
-                    b.HasIndex("RouteID");
+                    b.HasIndex("RouteID", "LoggedAt");
 
                     b.ToTable("route_risk_logs");
                 });
@@ -442,6 +448,10 @@ namespace SafeRouteAI.Infrastructure.Persistence.Migrations
                         .HasColumnType("datetime2")
                         .HasColumnName("date_time");
 
+                    b.Property<double?>("Humidity")
+                        .HasColumnType("float")
+                        .HasColumnName("humidity");
+
                     b.Property<decimal>("Latitude")
                         .HasPrecision(9, 6)
                         .HasColumnType("decimal(9,6)")
@@ -465,6 +475,8 @@ namespace SafeRouteAI.Infrastructure.Persistence.Migrations
                         .HasColumnName("wind_speed");
 
                     b.HasKey("WeatherLogID");
+
+                    b.HasIndex("Latitude", "Longitude", "DateTime");
 
                     b.ToTable("weather_logs");
                 });
@@ -521,8 +533,7 @@ namespace SafeRouteAI.Infrastructure.Persistence.Migrations
                     b.HasOne("SafeRouteAI.Domain.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserID")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("User");
                 });

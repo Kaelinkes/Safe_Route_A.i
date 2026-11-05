@@ -1,0 +1,12 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "C#: Launch Startup Project",
+      "type": "dotnet",
+      "request": "launch",
+      "projectPath": "${workspaceFolder}/SafeRouteAI/SafeRouteAI.API/SafeRouteAI.API.csproj",
+      "launchSettingsProfile": "https"
+    }
+  ]
+}

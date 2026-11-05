@@ -12,6 +12,8 @@ public class WeatherLog
 
     public double? Precipitation { get; set; }
 
+    public double? Humidity { get; set; }
+
     public double? Visibility { get; set; }
 
     public double? WindSpeed { get; set; }

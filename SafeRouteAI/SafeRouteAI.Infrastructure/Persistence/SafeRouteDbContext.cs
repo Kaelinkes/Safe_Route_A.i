@@ -41,6 +41,7 @@ public sealed class SafeRouteDbContext(DbContextOptions<SafeRouteDbContext> opti
         {
             entity.HasKey(x => x.RouteID);
             entity.Property(x => x.RouteID).ValueGeneratedOnAdd();
+            entity.HasIndex(x => new { x.UserID, x.RequestDateTime });
             entity.HasOne(x => x.User)
                 .WithMany()
                 .HasForeignKey(x => x.UserID)
@@ -51,6 +52,7 @@ public sealed class SafeRouteDbContext(DbContextOptions<SafeRouteDbContext> opti
         {
             entity.HasKey(x => x.RouteOptionID);
             entity.Property(x => x.RouteOptionID).ValueGeneratedOnAdd();
+            entity.HasIndex(x => new { x.RouteID, x.Rank });
             entity.HasOne(x => x.Route)
                 .WithMany()
                 .HasForeignKey(x => x.RouteID)
@@ -60,6 +62,7 @@ public sealed class SafeRouteDbContext(DbContextOptions<SafeRouteDbContext> opti
         modelBuilder.Entity<RouteOptionRoadSegment>(entity =>
         {
             entity.HasKey(x => new { x.RouteOptionID, x.RoadSegmentID });
+            entity.HasIndex(x => new { x.RouteOptionID, x.SegmentOrder });
             entity.HasOne(x => x.RouteOption)
                 .WithMany(x => x.RouteOptionRoadSegments)
                 .HasForeignKey(x => x.RouteOptionID)
@@ -91,6 +94,7 @@ public sealed class SafeRouteDbContext(DbContextOptions<SafeRouteDbContext> opti
             entity.Property(x => x.Description).IsRequired(false);
             entity.Property(x => x.ReviewedByAdminID).IsRequired(false);
             entity.Property(x => x.ReviewedAt).IsRequired(false);
+            entity.HasIndex(x => x.ReportDateTime);
             entity.HasOne(x => x.User)
                 .WithMany()
                 .HasForeignKey(x => x.UserID)
@@ -125,6 +129,7 @@ public sealed class SafeRouteDbContext(DbContextOptions<SafeRouteDbContext> opti
             entity.Property(x => x.WeatherLogID).ValueGeneratedOnAdd();
             entity.Property(x => x.Latitude).HasPrecision(9, 6);
             entity.Property(x => x.Longitude).HasPrecision(9, 6);
+            entity.HasIndex(x => new { x.Latitude, x.Longitude, x.DateTime });
         });
 
         modelBuilder.Entity<ModelVersion>(entity =>
@@ -141,6 +146,7 @@ public sealed class SafeRouteDbContext(DbContextOptions<SafeRouteDbContext> opti
             entity.Property(x => x.Longitude).HasPrecision(9, 6);
             entity.Property(x => x.AccidentType).IsRequired(false);
             entity.Property(x => x.Severity).IsRequired(false);
+            entity.HasIndex(x => new { x.Latitude, x.Longitude, x.DateTime });
         });
 
         modelBuilder.Entity<RiskExplanation>(entity =>
@@ -154,6 +160,7 @@ public sealed class SafeRouteDbContext(DbContextOptions<SafeRouteDbContext> opti
             entity.HasKey(x => x.RouteRiskLogID);
             entity.Property(x => x.RouteRiskLogID).ValueGeneratedOnAdd();
             entity.Property(x => x.ResultSnapshot).IsRequired();
+            entity.HasIndex(x => new { x.RouteID, x.LoggedAt });
             entity.HasOne(x => x.Route)
                 .WithMany()
                 .HasForeignKey(x => x.RouteID)

@@ -1,60 +1,83 @@
-# SQL Server persistence
+# EF Core and SQL Server
 
-`SafeRouteDbContext` maps the Domain entities directly to SQL Server tables.
-Infrastructure references Domain, but Domain has no EF Core dependency. The
-schema contains only Domain entities and their declared relationships; it does
-not add lookup tables, seeded business data, check constraints, or database
-defaults that enforce business rules. Primary keys and foreign keys reflect
-entity identity and navigation properties.
+For the full database table catalog, relationships, column conventions,
+indexes, schema guarantees, migration history, and known gaps, see
+[`DATABASE-DESIGN.md`](./DATABASE-DESIGN.md).
 
-The migration history was replaced with a fresh baseline to match the Domain
-model. This baseline is intended for a new or disposable database. Do not apply
-it to a database with data to preserve; recreate the disposable database before
-running its integration test.
+`SafeRouteDbContext` maps the Domain entities to SQL Server. Domain does not
+depend on EF Core. The database stores entity data and relationships;
+business calculations, validation, risk rules, and geometry encoding or
+decoding belong in application code.
 
-## Configure a local connection
+## Configure a development connection
 
-From the solution directory, set a connection string with user-secrets. Substitute the host, user, and password for your SQL Server instance:
+The API reads `ConnectionStrings:SafeRouteDatabase`. Keep credentials out of
+source control. In zsh, enter the password without echoing it and export a
+test-only connection string in the terminal used to start the API:
 
-```sh
-dotnet user-secrets set --project SafeRouteAI.API "ConnectionStrings:SafeRouteDatabase" "Server=localhost,1433;Database=SafeRouteAIDataBase;User Id=sa;Password=<Password123!Aa>;Encrypt=True;TrustServerCertificate=True"
+```zsh
+read -s "DB_PASSWORD?SQL Server password: "
+echo
+export ConnectionStrings__SafeRouteDatabase="Server=localhost,1435;Database=SafeRouteDomainTest;User Id=sa;Password=$DB_PASSWORD;Encrypt=True;TrustServerCertificate=True"
+unset DB_PASSWORD
 ```
 
-Do not commit passwords or production connection strings. On macOS, SQL Server must be running in Docker or hosted remotely.
+Replace the server, database, and login with the intended environment.
+Alternatively, store the connection using API user-secrets. Do not commit or
+share passwords or full connection strings. On macOS, SQL Server must be
+running in Docker or hosted remotely.
 
-## Create and apply the database
+## Automatic migrations
 
-From the solution directory, apply the checked-in Domain-aligned baseline to a
-new or disposable database:
+Infrastructure registers `SafeRouteDbContext`; the API calls
+`Database.MigrateAsync()` before accepting requests. EF Core creates a missing
+database and applies unapplied migrations. A missing connection string,
+unavailable SQL Server, or migration failure stops startup explicitly.
+
+Run the API from the repository root:
 
 ```sh
-export PATH="$PATH:$HOME/.dotnet/tools"
-dotnet ef database update --project SafeRouteAI.Infrastructure --startup-project SafeRouteAI.API
+dotnet run --project SafeRouteAI/SafeRouteAI.API/SafeRouteAI.API.csproj
 ```
 
-For later Domain model changes, add a new migration with a distinct name and
-review it before applying it:
+Startup logs should indicate it is applying migrations, followed by
+`SafeRoute database is ready.` The SQL login must be permitted to create the
+database (if needed) and apply schema changes.
+
+For explicit migration application:
 
 ```sh
-dotnet ef migrations add <MigrationName> --project SafeRouteAI.Infrastructure --startup-project SafeRouteAI.API --output-dir Persistence/Migrations
+dotnet ef database update \
+  --project SafeRouteAI/SafeRouteAI.Infrastructure/SafeRouteAI.Infrastructure.csproj \
+  --startup-project SafeRouteAI/SafeRouteAI.API/SafeRouteAI.API.csproj
 ```
 
-At startup, the API validates that the connection string is configured and calls
-EF Core `MigrateAsync`. If the configured database does not exist, the SQL Server
-provider creates it, then applies pending migrations. The SQL login must be
-allowed to connect to the SQL Server and create the database, and must have
-permissions to apply schema changes. Startup fails if the server is unavailable
-or migration application fails. You can also apply migrations explicitly with
-`dotnet ef database update`.
+Use startup migrations for local development and disposable test databases.
+For production, review and deploy generated migration scripts as a controlled
+deployment step instead of letting every API instance modify the schema.
 
-The model uses SQL Server types inferred from the Domain property types,
-identity columns for integer primary keys, and non-cascading foreign keys.
-Review generated migrations before applying them to any shared database.
+## Create later migrations
 
-## Integration tests
+After an approved Domain or mapping change, scaffold and inspect a migration:
 
-See [the Infrastructure.Tests README](../SafeRouteAI.Infrastructure.Tests/README.md)
-for configuring a disposable SQL Server test database and running the EF Core
-insert/read/update integration test.
+```sh
+dotnet ef migrations add <MigrationName> \
+  --project SafeRouteAI/SafeRouteAI.Infrastructure/SafeRouteAI.Infrastructure.csproj \
+  --startup-project SafeRouteAI/SafeRouteAI.API/SafeRouteAI.API.csproj \
+  --output-dir Persistence/Migrations
+```
 
-For the intended sample rows and relationships, see [the seed-data inventory](./SEED-DATA.md).
+The current migration sequence is `DomainAlignedInitial`,
+`AllowAnonymousRoutes`, `ContextQueryIndexes`, then
+`AddHumidityToWeatherLogs`. If a database has tables but no matching EF
+migration history, inspect its schema and history first: EF may otherwise try
+to create tables that already exist. Never replace migration history or reset
+a database containing data you need to keep. See the
+[database design reference](./DATABASE-DESIGN.md#existing-databases-and-migration-history)
+for safe recovery guidance.
+
+## Related documentation
+
+See the Infrastructure.Tests project documentation for SQL Server integration
+testing. The intended sample seed rows are documented in
+[`SEED-DATA.md`](./SEED-DATA.md).

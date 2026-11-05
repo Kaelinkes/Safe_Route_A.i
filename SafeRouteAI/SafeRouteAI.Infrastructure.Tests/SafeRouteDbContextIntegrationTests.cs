@@ -26,11 +26,42 @@ public sealed class SafeRouteDbContextIntegrationTests
 
         Assert.Equal(expectedEntities, modelEntities.Select(entity => entity.ClrType).ToHashSet());
         Assert.All(modelEntities, entity => Assert.Empty(entity.GetCheckConstraints()));
+        var humidity = modelEntities
+            .Single(entity => entity.ClrType == typeof(WeatherLog))
+            .FindProperty(nameof(WeatherLog.Humidity))!;
+        Assert.True(humidity.IsNullable);
+        Assert.Equal("humidity", humidity.GetColumnName());
+        Assert.True(
+            modelEntities.Single(entity => entity.ClrType == typeof(Route))
+                .FindProperty(nameof(Route.UserID))!.IsNullable);
+        AssertIndex<Route>(modelEntities, nameof(Route.UserID), nameof(Route.RequestDateTime));
+        AssertIndex<RouteOption>(modelEntities, nameof(RouteOption.RouteID), nameof(RouteOption.Rank));
+        AssertIndex<CommunityReport>(
+            modelEntities,
+            nameof(CommunityReport.ReportDateTime));
+        AssertIndex<WeatherLog>(
+            modelEntities,
+            nameof(WeatherLog.Latitude),
+            nameof(WeatherLog.Longitude),
+            nameof(WeatherLog.DateTime));
+        AssertIndex<AccidentRecord>(
+            modelEntities,
+            nameof(AccidentRecord.Latitude),
+            nameof(AccidentRecord.Longitude),
+            nameof(AccidentRecord.DateTime));
+        AssertIndex<RouteRiskLog>(
+            modelEntities,
+            nameof(RouteRiskLog.RouteID),
+            nameof(RouteRiskLog.LoggedAt));
+        AssertIndex<RouteOptionRoadSegment>(
+            modelEntities,
+            nameof(RouteOptionRoadSegment.RouteOptionID),
+            nameof(RouteOptionRoadSegment.SegmentOrder));
     }
 
     [SqlServerFact]
     [Trait("Category", "Integration")]
-    public async Task AccidentRecord_CanBeInsertedReadAndUpdated()
+    public async Task DomainEntities_CanBeInsertedReadAndUpdated_AndRouteCanBeAnonymous()
     {
         var connectionString =
             Environment.GetEnvironmentVariable("SAFEROUTE_TEST_CONNECTION_STRING")
@@ -84,7 +115,33 @@ public sealed class SafeRouteDbContextIntegrationTests
             .SingleAsync(item => item.AccidentID == accident.AccidentID);
         Assert.Equal("Moderate", updated.Severity);
 
+        var anonymousRoute = new Route
+        {
+            UserID = null,
+            Origin = "Anonymous origin",
+            Destination = "Anonymous destination",
+            RequestDateTime = DateTime.UtcNow
+        };
+        db.Routes.Add(anonymousRoute);
+        await db.SaveChangesAsync();
+
+        db.ChangeTracker.Clear();
+        var insertedAnonymousRoute = await db.Routes
+            .AsNoTracking()
+            .SingleAsync(route => route.RouteID == anonymousRoute.RouteID);
+        Assert.Null(insertedAnonymousRoute.UserID);
+
         await transaction.RollbackAsync();
+    }
+
+    private static void AssertIndex<TEntity>(
+        IEnumerable<IEntityType> entityTypes,
+        params string[] propertyNames)
+    {
+        var entityType = Assert.Single(entityTypes, entity => entity.ClrType == typeof(TEntity));
+        Assert.Contains(
+            entityType.GetIndexes(),
+            index => index.Properties.Select(property => property.Name).SequenceEqual(propertyNames));
     }
 }
 
