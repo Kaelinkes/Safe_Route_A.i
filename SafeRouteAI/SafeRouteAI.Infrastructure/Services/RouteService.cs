@@ -5,6 +5,7 @@ using SafeRouteAI.Application.Validation;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using SafeRouteAI.Application.Exceptions;
 
 namespace SafeRouteAI.Infrastructure.Services;
 
@@ -46,7 +47,16 @@ public class RouteService : IRouteService
                 response = await SendAsync(new { coordinates = coords }, cancellationToken);
             }
         }
-
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
+            if (IsNoRouteError(body))
+            {
+                response.Dispose();
+                throw new RouteNotFoundException(
+                    "No road was found near one of the points. Try a location closer to a road.");
+            }
+        }
         using (response)
         {
             response.EnsureSuccessStatusCode();
@@ -72,5 +82,23 @@ public class RouteService : IRouteService
         var request = new HttpRequestMessage(HttpMethod.Post, Url) { Content = JsonContent.Create(body) };
         request.Headers.TryAddWithoutValidation("Authorization", _apiKey);
         return _http.SendAsync(request, ct);
+    }
+
+    // ORS 2010 = no routable point near a coordinate, 2009 = no route between the points
+    private static bool IsNoRouteError(string body)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(body);
+            return doc.RootElement.TryGetProperty("error", out var error)
+                && error.ValueKind == JsonValueKind.Object
+                && error.TryGetProperty("code", out var code)
+                && code.TryGetInt32(out var c)
+                && c is 2009 or 2010;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
     }
 }

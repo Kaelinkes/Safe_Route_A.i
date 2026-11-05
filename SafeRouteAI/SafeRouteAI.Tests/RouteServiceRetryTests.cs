@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using SafeRouteAI.Application.DTOs;
 using SafeRouteAI.Infrastructure.Services;
+using SafeRouteAI.Application.Exceptions;
 
 public class RouteServiceRetryTests
 {
@@ -51,5 +52,24 @@ public class RouteServiceRetryTests
         await Assert.ThrowsAsync<HttpRequestException>(() => Create(handler).GetRoutesAsync(A, B));
 
         Assert.Equal(1, handler.Calls);
+    }
+
+    [Fact]
+    public async Task Ors_2010_throws_RouteNotFound_without_retrying()
+    {
+        var handler = new SequenceHandler((HttpStatusCode.NotFound,
+            """{"error":{"code":2010,"message":"Could not find routable point within a radius of 350.0 meters"}}"""));
+
+        await Assert.ThrowsAsync<RouteNotFoundException>(() => Create(handler).GetRoutesAsync(A, B));
+
+        Assert.Equal(1, handler.Calls);
+    }
+
+    [Fact]
+    public async Task Other_404_still_throws_HttpRequestException()
+    {
+        var handler = new SequenceHandler((HttpStatusCode.NotFound, "not found"));
+
+        await Assert.ThrowsAsync<HttpRequestException>(() => Create(handler).GetRoutesAsync(A, B));
     }
 }
