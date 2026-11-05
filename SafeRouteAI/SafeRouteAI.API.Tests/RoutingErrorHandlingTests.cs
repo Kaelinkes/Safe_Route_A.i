@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using SafeRouteAI.API.DTOs;
 using SafeRouteAI.API.Interfaces;
+using SafeRouteAI.API.Services;
+using SafeRouteAI.Application.Exceptions;
 using Xunit;
 
 namespace SafeRouteAI.API.Tests;
@@ -14,28 +16,21 @@ namespace SafeRouteAI.API.Tests;
 public class RoutingErrorHandlingTests
 {
     [Theory]
-    [InlineData(HttpStatusCode.NotFound, 422,
-        "Route could not be calculated")]
-    [InlineData(HttpStatusCode.BadRequest, 422,
-        "Route could not be calculated")]
-    [InlineData(HttpStatusCode.TooManyRequests, 503,
-        "Routing provider temporarily unavailable")]
-    [InlineData(HttpStatusCode.InternalServerError, 502,
-        "Routing provider error")]
-    [InlineData(HttpStatusCode.Forbidden, 502,
-        "Routing provider error")]
-    public async Task ProviderHttpFailure_ReturnsExpectedProblem(
-        HttpStatusCode providerStatus,
-        int expectedStatus,
-        string expectedTitle)
+    [InlineData(HttpStatusCode.NotFound)]
+    [InlineData(HttpStatusCode.BadRequest)]
+    [InlineData(HttpStatusCode.TooManyRequests)]
+    [InlineData(HttpStatusCode.InternalServerError)]
+    [InlineData(HttpStatusCode.Forbidden)]
+    public async Task ProviderHttpFailure_Returns502(
+        HttpStatusCode providerStatus)
     {
         await AssertRoutingErrorAsync(
             new HttpRequestException(
                 "Sensitive upstream error",
                 null,
                 providerStatus),
-            expectedStatus,
-            expectedTitle);
+            502,
+            "Routing provider error");
     }
 
     [Fact]
@@ -46,6 +41,46 @@ public class RoutingErrorHandlingTests
                 "Sensitive network error"),
             502,
             "Routing provider error");
+    }
+
+    [Fact]
+    public async Task RouteNotFoundException_Returns404()
+    {
+        await AssertRoutingErrorAsync(
+            new RouteNotFoundException(
+                "Sensitive route provider details"),
+            404,
+            "Route not found");
+    }
+
+    [Fact]
+    public async Task ArgumentException_Returns400()
+    {
+        await AssertRoutingErrorAsync(
+            new ArgumentException(
+                "Sensitive validation details"),
+            400,
+            "Invalid route request");
+    }
+
+    [Fact]
+    public async Task InvalidOperationException_Returns502()
+    {
+        await AssertRoutingErrorAsync(
+            new InvalidOperationException(
+                "Sensitive configuration details"),
+            502,
+            "Routing service error");
+    }
+
+    [Fact]
+    public async Task RoutingUnavailable_Returns503()
+    {
+        await AssertRoutingErrorAsync(
+            new RouteServiceUnavailableException(
+                "Sensitive routing configuration details"),
+            503,
+            "Routing service unavailable");
     }
 
     private static async Task AssertRoutingErrorAsync(
@@ -106,11 +141,7 @@ public class RoutingErrorHandlingTests
         var responseBody = json.RootElement.GetRawText();
 
         Assert.DoesNotContain(
-            "Sensitive upstream error",
-            responseBody);
-
-        Assert.DoesNotContain(
-            "Sensitive network error",
+            "Sensitive",
             responseBody);
     }
 
