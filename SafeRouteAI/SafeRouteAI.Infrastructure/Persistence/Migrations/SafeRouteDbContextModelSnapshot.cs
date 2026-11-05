@@ -1574,6 +1574,11 @@ namespace SafeRouteAI.Infrastructure.Persistence.Migrations
                         .HasColumnName("fetched_at")
                         .HasDefaultValueSql("SYSUTCDATETIME()");
 
+                    b.Property<decimal?>("HumidityPercent")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)")
+                        .HasColumnName("humidity_percent");
+
                     b.Property<bool>("IsForecast")
                         .HasColumnType("bit")
                         .HasColumnName("is_forecast");
@@ -1643,7 +1648,7 @@ namespace SafeRouteAI.Infrastructure.Persistence.Migrations
                         {
                             t.HasCheckConstraint("ck_weather_coordinates", "[latitude] BETWEEN -90 AND 90 AND [longitude] BETWEEN -180 AND 180");
 
-                            t.HasCheckConstraint("ck_weather_measurements", "([precipitation_mm] IS NULL OR [precipitation_mm] >= 0) AND ([visibility_m] IS NULL OR [visibility_m] >= 0) AND ([wind_speed_kmh] IS NULL OR [wind_speed_kmh] >= 0)");
+                            t.HasCheckConstraint("ck_weather_measurements", "([precipitation_mm] IS NULL OR [precipitation_mm] >= 0) AND ([visibility_m] IS NULL OR [visibility_m] >= 0) AND ([wind_speed_kmh] IS NULL OR [wind_speed_kmh] >= 0) AND ([humidity_percent] IS NULL OR [humidity_percent] BETWEEN 0 AND 100)");
 
                             t.HasCheckConstraint("ck_weather_window", "[valid_to] > [valid_from]");
                         });

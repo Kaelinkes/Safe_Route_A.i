@@ -315,7 +315,12 @@ public sealed class SafeRouteDbContext(DbContextOptions<SafeRouteDbContext> opti
             {
                 table.HasCheckConstraint("ck_weather_coordinates", "[latitude] BETWEEN -90 AND 90 AND [longitude] BETWEEN -180 AND 180");
                 table.HasCheckConstraint("ck_weather_window", "[valid_to] > [valid_from]");
-                table.HasCheckConstraint("ck_weather_measurements", "([precipitation_mm] IS NULL OR [precipitation_mm] >= 0) AND ([visibility_m] IS NULL OR [visibility_m] >= 0) AND ([wind_speed_kmh] IS NULL OR [wind_speed_kmh] >= 0)");
+                table.HasCheckConstraint(
+    "ck_weather_measurements",
+    "([precipitation_mm] IS NULL OR [precipitation_mm] >= 0) AND " +
+    "([visibility_m] IS NULL OR [visibility_m] >= 0) AND " +
+    "([wind_speed_kmh] IS NULL OR [wind_speed_kmh] >= 0) AND " +
+    "([humidity_percent] IS NULL OR [humidity_percent] BETWEEN 0 AND 100)");
             });
             entity.HasKey(x => x.WeatherId);
             entity.Property(x => x.WeatherId).UseIdentityColumn();
@@ -325,6 +330,7 @@ public sealed class SafeRouteDbContext(DbContextOptions<SafeRouteDbContext> opti
             entity.Property(x => x.TemperatureC).HasPrecision(4, 1);
             entity.Property(x => x.PrecipitationMm).HasPrecision(6, 2);
             entity.Property(x => x.WindSpeedKmh).HasPrecision(5, 1);
+            entity.Property(x => x.HumidityPercent).HasPrecision(5, 2);
             entity.Property(x => x.SeverityCode).HasMaxLength(10).IsRequired();
             entity.Property(x => x.Provider).HasMaxLength(100).IsRequired();
             entity.Property(x => x.FetchedAt).HasDefaultValueSql("SYSUTCDATETIME()");

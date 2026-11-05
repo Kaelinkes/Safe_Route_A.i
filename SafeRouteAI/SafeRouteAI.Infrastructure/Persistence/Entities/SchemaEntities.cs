@@ -151,6 +151,7 @@ public sealed class WeatherObservationRecord
     public decimal? PrecipitationMm { get; set; }
     public int? VisibilityM { get; set; }
     public decimal? WindSpeedKmh { get; set; }
+    public decimal? HumidityPercent { get; set; }
     public string SeverityCode { get; set; } = string.Empty;
     public string Provider { get; set; } = string.Empty;
     public DateTimeOffset FetchedAt { get; set; }
