@@ -7,17 +7,20 @@ namespace SafeRouteAI.Infrastructure;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services)
     {
-        var connectionString = configuration.GetConnectionString("SafeRouteDatabase");
-        if (string.IsNullOrWhiteSpace(connectionString))
+        services.AddDbContext<SafeRouteDbContext>((serviceProvider, options) =>
         {
-            throw new InvalidOperationException(
-                "Connection string 'SafeRouteDatabase' is missing. Configure it using user-secrets or the ConnectionStrings__SafeRouteDatabase environment variable.");
-        }
+            var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+            var connectionString = configuration.GetConnectionString("SafeRouteDatabase");
+            if (string.IsNullOrWhiteSpace(connectionString))
+            {
+                throw new InvalidOperationException(
+                    "Connection string 'SafeRouteDatabase' is missing. Configure it using user-secrets or the ConnectionStrings__SafeRouteDatabase environment variable.");
+            }
 
-        services.AddDbContext<SafeRouteDbContext>(options =>
-            options.UseSqlServer(connectionString, sql => sql.EnableRetryOnFailure()));
+            options.UseSqlServer(connectionString, sql => sql.EnableRetryOnFailure());
+        });
 
         return services;
     }

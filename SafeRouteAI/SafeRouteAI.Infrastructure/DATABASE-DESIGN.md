@@ -115,11 +115,13 @@ changes, and check that the model snapshot is current before applying it.
 
 ## Startup and connection configuration
 
-`AddInfrastructure` reads `ConnectionStrings:SafeRouteDatabase` and registers
-`SafeRouteDbContext` with SQL Server and transient retry support. A missing
-connection string throws an explicit configuration exception. In API
-`Program.cs`, `Database.MigrateAsync()` runs before the app starts listening;
-a database connection or migration failure therefore prevents startup.
+`AddInfrastructure()` registers `SafeRouteDbContext` with SQL Server and
+transient retry support. The context resolves
+`ConnectionStrings:SafeRouteDatabase` from the host's `IConfiguration` when it
+is first created; a missing connection string throws an explicit
+configuration exception. In API `Program.cs`, `Database.MigrateAsync()` runs
+before the app starts listening; a database connection or migration failure
+therefore prevents startup.
 
 Use API user-secrets or the `ConnectionStrings__SafeRouteDatabase`
 environment variable. For example, from zsh, prompt for a development
