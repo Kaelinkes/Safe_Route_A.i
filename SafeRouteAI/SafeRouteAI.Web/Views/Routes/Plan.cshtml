@@ -1,0 +1,313 @@
+@{
+    ViewData["Title"] = "Plan a route";
+}
+<section class="page-head route-page-head">
+    <div>
+        <div class="eyebrow">ROUTE EXPLORER</div>
+        <h1>Plan a <em>smarter journey.</em></h1>
+        <p>Enter a starting point and destination to request route options when routing is connected.</p>
+    </div>
+</section>
+
+<div class="route-mobile-switch" role="group" aria-label="Choose route view">
+    <button type="button" class="view-toggle selected" data-view="list" aria-pressed="true">List</button>
+    <button type="button" class="view-toggle" data-view="map" aria-pressed="false">Map</button>
+</div>
+
+<section class="planner route-planner" id="routePlanner" data-mobile-view="list">
+    <aside class="route-panel route-request-panel" aria-labelledby="routeRequestTitle">
+        <div class="eyebrow">YOUR JOURNEY</div>
+        <h2 id="routeRequestTitle">Where are you going?</h2>
+        <form id="routeRequestForm" method="post" novalidate data-route-url="@Url.Action("CompareRoutes", "Routes")">
+            @Html.AntiForgeryToken()
+            <div class="route-input-group">
+                <label for="planOrigin">Starting point <span class="required-mark" aria-label="required">*</span></label>
+                <input id="planOrigin" name="origin" maxlength="255" required autocomplete="off" aria-describedby="originHint originError" />
+                <small id="originHint" class="input-hint">Enter a location, or choose a point on the map.</small>
+                <p id="originError" class="inline-error" role="alert" hidden></p>
+                <button class="map-pick-button" type="button" data-pick-location="origin" aria-pressed="false">Choose origin on map</button>
+            </div>
+            <div class="route-input-group">
+                <label for="planDestination">Destination <span class="required-mark" aria-label="required">*</span></label>
+                <input id="planDestination" name="destination" maxlength="255" required autocomplete="off" aria-describedby="destinationHint destinationError" />
+                <small id="destinationHint" class="input-hint">Enter a location, or choose a point on the map.</small>
+                <p id="destinationError" class="inline-error" role="alert" hidden></p>
+                <button class="map-pick-button" type="button" data-pick-location="destination" aria-pressed="false">Choose destination on map</button>
+            </div>
+            <div class="route-form-actions">
+                <button class="btn route-find-button" id="findRoutes" type="submit">Find routes <span aria-hidden="true">→</span></button>
+                <button class="btn outline" id="swapLocations" type="button" aria-label="Swap origin and destination">↕ Swap</button>
+                <button class="btn outline" id="clearRouteForm" type="button">Clear</button>
+            </div>
+            <p id="routeFormMessage" class="route-message" role="status" aria-live="polite" hidden></p>
+        </form>
+        <p class="tiny-note">Map selection sets coordinates only. Place lookup and route calculation are unavailable until routing services are connected.</p>
+    </aside>
+
+    <div class="route-workspace">
+        <section class="route-results" id="routeResults" aria-labelledby="routeResultsTitle">
+            <div class="results-heading">
+                <div>
+                    <div class="eyebrow">ROUTE OPTIONS</div>
+                    <h2 id="routeResultsTitle" tabindex="-1">Route results</h2>
+                </div>
+                <label class="sort-control" for="routeSort">Sort by
+                    <select id="routeSort" disabled>
+                        <option value="recommended">Recommended</option>
+                        <option value="fastest">Fastest</option>
+                        <option value="lowest-risk">Lowest risk</option>
+                    </select>
+                </label>
+            </div>
+            <div id="routeCards" class="route-card-list" aria-live="polite">
+                <div class="empty-state"><h3>No routes available yet.</h3><p>Select both locations on the map to request route options. Results appear only when the routing service returns valid route data.</p></div>
+            </div>
+        </section>
+
+        <section class="map-panel route-map-panel" id="routeMapView" aria-label="Route map">
+            <div class="map-toolbar"><b>⌖ &nbsp; Map</b><span>OpenStreetMap · Location selection prototype</span></div>
+            <div class="map-selection-controls" role="group" aria-label="Map location selection">
+                <span>Choose a field, then click the map:</span>
+                <button type="button" data-pick-location="origin" aria-pressed="false">Set origin</button>
+                <button type="button" data-pick-location="destination" aria-pressed="false">Set destination</button>
+                <label class="community-toggle"><input id="showCommunityReports" type="checkbox" disabled /> Community reports unavailable</label>
+            </div>
+            <div id="routeMap" class="planner-map" role="region" aria-label="Interactive map. Choose origin or destination, then click to select coordinates."></div>
+            <p class="map-attribution">
+                Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>
+                · Map powered by <a href="https://leafletjs.com" target="_blank" rel="noopener noreferrer">Leaflet</a>
+            </p>
+            <div class="route-map-legend" aria-label="Risk classifications">
+                <span><i class="legend-line low" aria-hidden="true"></i>Low</span>
+                <span><i class="legend-line medium" aria-hidden="true"></i>Medium</span>
+                <span><i class="legend-line high" aria-hidden="true"></i>High</span>
+                <span><i class="legend-line unknown" aria-hidden="true"></i>Insufficient data</span>
+            </div>
+            <div class="map-summary" aria-live="polite"><b>Selected route:</b><p id="routeSummary">No route selected.</p></div>
+            <section class="weather-panel" aria-labelledby="plannerWeatherTitle" data-weather-url="@Url.Action("Weather", "Routes")">
+                <div class="weather-panel-heading">
+                    <div>
+                        <h3 id="plannerWeatherTitle">Weather at selected map point</h3>
+                        <p>Live information is requested from the weather service for the selected coordinates.</p>
+                    </div>
+                </div>
+                <p id="plannerWeatherStatus" class="weather-status" role="status" aria-live="polite">Select a point on the map to request weather information.</p>
+                <dl id="plannerWeatherReadings" class="weather-readings" hidden>
+                    <div><dt>Temperature</dt><dd data-weather-value="temperature">—</dd></div>
+                    <div><dt>Humidity</dt><dd data-weather-value="humidity">—</dd></div>
+                    <div><dt>Precipitation</dt><dd data-weather-value="precipitation">—</dd></div>
+                    <div><dt>Visibility</dt><dd data-weather-value="visibility">—</dd></div>
+                    <div><dt>Wind speed</dt><dd data-weather-value="wind">—</dd></div>
+                    <div><dt>Weather code</dt><dd data-weather-value="code">—</dd></div>
+                    <div><dt>Observed (UTC)</dt><dd data-weather-value="observed">—</dd></div>
+                </dl>
+            </section>
+        </section>
+    </div>
+</section>
+
+<section class="callout route-safety-note"><b>Risk information</b><p>Risk assessment is unavailable until the relevant service is connected. Insufficient risk data and service unavailability are different states. Risk information, when available, is decision support and not a guarantee.</p></section>
+
+<section id="routeDetails" class="content route-details" aria-labelledby="routeDetailsTitle" hidden>
+    <div class="content-title"><div><div class="eyebrow">ROUTE DETAILS</div><h2 id="routeDetailsTitle">Route details</h2></div><a class="btn outline" href="#routeResults" id="backToResults">← Back to results</a></div>
+    <p id="routeDetailCopy">Route details are unavailable until routing integration is connected.</p>
+    <div class="high-risk-banner" id="routeHighRiskWarning" hidden><span class="warning-icon" aria-hidden="true">!</span><div><b>High risk</b><p>Risk warning information will appear here when provided by the risk assessment service.</p></div></div>
+    <h3 class="explanation-title">Risk explanation</h3>
+    <div class="risk-explanation-grid" id="riskExplanation" aria-label="Risk explanation categories">
+        <article><h3>Historical accident patterns</h3><p>Risk assessment is unavailable.</p></article>
+        <article><h3>Current weather</h3><p>Weather information is currently unavailable.</p></article>
+        <article><h3>Community reports</h3><p>No community reports available.</p></article>
+    </div>
+    <h3 class="segment-heading">Route segment summary</h3>
+    <ul id="routeSegmentSummary" class="segment-summary"></ul>
+</section>
+
+@section Scripts {
+<script src="~/js/route-weather.js" asp-append-version="true"></script>
+<script src="~/js/route-comparison.js" asp-append-version="true"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const form = document.getElementById("routeRequestForm");
+        const origin = document.getElementById("planOrigin");
+        const destination = document.getElementById("planDestination");
+        const message = document.getElementById("routeFormMessage");
+        const planner = document.getElementById("routePlanner");
+        const markers = {};
+        const selectedCoordinates = { origin: null, destination: null };
+        let map = null;
+        let pickField = null;
+
+        try {
+            origin.value = sessionStorage.getItem("sr-origin") || origin.value;
+            destination.value = sessionStorage.getItem("sr-destination") || destination.value;
+            sessionStorage.removeItem("sr-origin");
+            sessionStorage.removeItem("sr-destination");
+        } catch {
+            /* Direct route planning works without the optional location handoff. */
+        }
+
+        function setError(field, text) {
+            const errorId = field === origin ? "originError" : "destinationError";
+            setInlineError(field, document.getElementById(errorId), text);
+        }
+
+        function showMessage(text, kind = "info") {
+            message.textContent = text;
+            message.className = `route-message ${kind}`;
+            message.hidden = false;
+        }
+
+        function clearRouteSelection(fieldName) {
+            selectedCoordinates[fieldName] = null;
+            markers[fieldName]?.remove();
+            delete markers[fieldName];
+            document.dispatchEvent(new Event("saferoute:weather-cleared"));
+        }
+
+        function validate() {
+            setError(origin, "");
+            setError(destination, "");
+            message.hidden = true;
+            const start = origin.value.trim();
+            const end = destination.value.trim();
+            let valid = true;
+
+            if (!start) {
+                setError(origin, "Please enter a starting point.");
+                valid = false;
+            }
+            if (!end) {
+                setError(destination, "Please enter a destination.");
+                valid = false;
+            }
+            if (start && end && start.toLocaleLowerCase() === end.toLocaleLowerCase()) {
+                setError(destination, "The origin and destination must be different.");
+                valid = false;
+            }
+            if (!selectedCoordinates.origin) {
+                setError(origin, "Choose the starting point on the map to provide coordinates.");
+                valid = false;
+            }
+            if (!selectedCoordinates.destination) {
+                setError(destination, "Choose the destination on the map to provide coordinates.");
+                valid = false;
+            }
+            if (selectedCoordinates.origin && selectedCoordinates.destination &&
+                selectedCoordinates.origin.latitude === selectedCoordinates.destination.latitude &&
+                selectedCoordinates.origin.longitude === selectedCoordinates.destination.longitude) {
+                setError(destination, "Origin and destination coordinates must be different.");
+                valid = false;
+            }
+            return valid;
+        }
+
+        origin.addEventListener("input", () => clearRouteSelection("origin"));
+        destination.addEventListener("input", () => clearRouteSelection("destination"));
+
+        form.addEventListener("submit", (event) => {
+            event.preventDefault();
+            if (!validate()) return;
+
+            document.dispatchEvent(new CustomEvent("saferoute:route-requested", {
+                detail: {
+                    origin: selectedCoordinates.origin,
+                    destination: selectedCoordinates.destination,
+                },
+            }));
+        });
+
+        document.getElementById("swapLocations").addEventListener("click", () => {
+            [origin.value, destination.value] = [destination.value, origin.value];
+            [selectedCoordinates.origin, selectedCoordinates.destination] =
+                [selectedCoordinates.destination, selectedCoordinates.origin];
+            [markers.origin, markers.destination] = [markers.destination, markers.origin];
+            document.dispatchEvent(new Event("saferoute:routes-cleared"));
+            setError(origin, "");
+            setError(destination, "");
+            showMessage("Starting point and destination swapped.", "info");
+        });
+
+        document.getElementById("clearRouteForm").addEventListener("click", () => {
+            form.reset();
+            selectedCoordinates.origin = null;
+            selectedCoordinates.destination = null;
+            document.dispatchEvent(new Event("saferoute:weather-cleared"));
+            document.dispatchEvent(new Event("saferoute:routes-cleared"));
+            setError(origin, "");
+            setError(destination, "");
+            message.hidden = true;
+            Object.values(markers).forEach((marker) => marker?.remove());
+            delete markers.origin;
+            delete markers.destination;
+            pickField = null;
+            document.querySelectorAll("[data-pick-location]").forEach((button) => button.setAttribute("aria-pressed", "false"));
+        });
+
+        function activateMapView() {
+            planner.dataset.mobileView = "map";
+            document.querySelectorAll(".view-toggle").forEach((button) => {
+                const active = button.dataset.view === "map";
+                button.classList.toggle("selected", active);
+                button.setAttribute("aria-pressed", String(active));
+            });
+            setTimeout(() => map?.invalidateSize(), 0);
+        }
+
+        document.querySelectorAll(".view-toggle").forEach((button) => button.addEventListener("click", () => {
+            planner.dataset.mobileView = button.dataset.view;
+            document.querySelectorAll(".view-toggle").forEach((toggle) => {
+                const active = toggle === button;
+                toggle.classList.toggle("selected", active);
+                toggle.setAttribute("aria-pressed", String(active));
+            });
+            if (button.dataset.view === "map") setTimeout(() => map?.invalidateSize(), 0);
+        }));
+
+        document.querySelectorAll("[data-pick-location]").forEach((button) => button.addEventListener("click", () => {
+            pickField = button.dataset.pickLocation;
+            document.querySelectorAll("[data-pick-location]").forEach((control) => control.setAttribute("aria-pressed", String(control.dataset.pickLocation === pickField)));
+            activateMapView();
+            showMessage(`Click the map to choose ${pickField === "origin" ? "a starting point" : "a destination"}. This selects coordinates only; no place lookup is performed.`);
+        }));
+
+        if (window.L) {
+            map = L.map("routeMap", { zoomControl: false, attributionControl: false }).setView([-29, 24], 5);
+            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "&copy; OpenStreetMap contributors" }).addTo(map);
+            L.control.zoom({ position: "topright" }).addTo(map);
+            map.on("click", (event) => {
+                if (!pickField) return;
+
+                const selected = pickField;
+                const field = selected === "origin" ? origin : destination;
+                const latitude = event.latlng.lat;
+                const longitude = event.latlng.lng;
+                if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90 ||
+                    !Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+                    setError(field, "The selected map coordinates are invalid.");
+                    return;
+                }
+
+                const lat = latitude.toFixed(5);
+                const lng = longitude.toFixed(5);
+                field.value = `Map coordinates (${lat}, ${lng})`;
+                selectedCoordinates[selected] = { latitude, longitude };
+                document.dispatchEvent(new Event("saferoute:routes-cleared"));
+                setError(field, "");
+                markers[selected]?.remove();
+                markers[selected] = L.marker(event.latlng).addTo(map);
+                pickField = null;
+                document.querySelectorAll("[data-pick-location]").forEach((control) => control.setAttribute("aria-pressed", "false"));
+                document.dispatchEvent(new CustomEvent("saferoute:weather-selected", { detail: { latitude, longitude } }));
+                showMessage(`${selected === "origin" ? "Starting point" : "Destination"} coordinates selected.`);
+            });
+        } else {
+            showMessage("The map library is unavailable. Route requests require map-selected coordinates.", "error");
+        }
+
+        document.getElementById("backToResults").addEventListener("click", () => {
+            document.getElementById("routeDetails").hidden = true;
+            document.getElementById("routeResultsTitle").focus();
+        });
+    });
+</script>
+}

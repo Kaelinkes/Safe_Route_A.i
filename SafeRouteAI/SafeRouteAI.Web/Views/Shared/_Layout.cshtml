@@ -1,50 +1,160 @@
-﻿<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - SafeRouteAI.Web</title>
-    <script type="importmap"></script>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/SafeRouteAI.Web.styles.css" asp-append-version="true" />
-</head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">SafeRouteAI.Web</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
+<!doctype html>
+<html lang="en-ZA">
+    <head>
+        <meta charset="utf-8" />
+        <meta
+            name="viewport"
+            content="width=device-width,initial-scale=1"
+        />
+        <title>@ViewData["Title"] · SafeRoute AI</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+            href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap"
+            rel="stylesheet"
+        />
+        <link
+            rel="stylesheet"
+            href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        />
+        <link
+            rel="stylesheet"
+            href="~/css/site.css"
+            asp-append-version="true"
+        />
+    </head>
+    <body>
+        <header class="topbar">
+            <a class="brand" asp-controller="Home" asp-action="Index">
+                <span class="logo" aria-hidden="true">✓</span>
+                <span>
+                    <b>
+                        SafeRoute
+                        <span>AI</span>
+                    </b>
+                    <small>Move with confidence</small>
+                </span>
+            </a>
+            <button
+                class="mobile-menu"
+                id="mobileMenu"
+                type="button"
+                aria-label="Open navigation menu"
+                aria-controls="siteNav"
+                aria-expanded="false"
+            >
+                <span aria-hidden="true">☰</span>
+            </button>
+            <nav class="nav" id="siteNav" aria-label="Main navigation">
+                <div
+                    class="role-nav"
+                    data-role-nav="visitor"
+                    aria-label="Visitor navigation"
+                >
+                    <a asp-controller="Home" asp-action="Index">Explore</a>
+                    <a asp-controller="Home" asp-action="About">
+                        How it works
+                    </a>
+                    <a asp-controller="Home" asp-action="Privacy">
+                        Privacy
+                    </a>
+                    <a asp-controller="Account" asp-action="Login">
+                        Log in
+                    </a>
+                    <a
+                        class="nav-cta"
+                        asp-controller="Account"
+                        asp-action="Register"
+                    >
+                        Get started
+                        <span aria-hidden="true">↗</span>
+                    </a>
                 </div>
+                <div
+                    class="role-nav"
+                    data-role-nav="user"
+                    aria-label="Registered user navigation"
+                    hidden
+                >
+                    <a asp-controller="Routes" asp-action="Plan">
+                        Plan a route
+                    </a>
+                    <a asp-controller="Routes" asp-action="History">
+                        Route History
+                    </a>
+                    <a asp-controller="Reports" asp-action="Index">
+                        Report incident
+                    </a>
+                    <span class="nav-unavailable" aria-disabled="true">Account (unavailable)</span>
+                </div>
+                <div
+                    class="role-nav"
+                    data-role-nav="admin"
+                    aria-label="Administrator navigation"
+                    hidden
+                >
+                    <a asp-controller="Dashboard" asp-action="Index">
+                        Overview
+                    </a>
+                    <a asp-controller="Admin" asp-action="ModerateReports">
+                        Moderate Reports
+                    </a>
+                    <a asp-controller="Admin" asp-action="Analytics">
+                        System Analytics
+                    </a>
+                    <span class="nav-unavailable" aria-disabled="true">Account (unavailable)</span>
+                </div>
+            </nav>
+            <div class="demo-role-control">
+                <label for="demoRole">Demo role</label>
+                <select id="demoRole" aria-label="Demo navigation role" aria-describedby="demoRoleNote">
+                    <option value="visitor">Visitor</option>
+                    <option value="user">Registered user</option>
+                    <option value="admin">Administrator</option>
+                </select>
+                <span aria-hidden="true">Preview only</span>
+                <span id="demoRoleNote" class="visually-hidden">This selector only changes visible navigation. It does not authenticate users or enforce permissions.</span>
             </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
+        </header>
+        <main id="mainContent">
+            @if (
+                !(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" &&
+                    ViewContext.RouteData.Values["action"]?.ToString() == "Index")
+            )
+            {
+                <nav class="breadcrumbs" aria-label="Breadcrumb">
+                    <a asp-controller="Home" asp-action="Index">Home</a>
+                    <span aria-hidden="true">›</span>
+                    <span aria-current="page">@ViewData["Title"]</span>
+                </nav>
+            }
+
             @RenderBody()
         </main>
-    </div>
-
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - SafeRouteAI.Web - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
-</body>
+        <footer>
+            <b>SafeRoute AI</b>
+            <span>Designed for safer journeys in South Africa</span>
+            <div>
+                <a asp-controller="Home" asp-action="About">About</a>
+                <a
+                    asp-controller="Reports"
+                    asp-action="MyReports"
+                    data-role-footer="user"
+                    hidden
+                >
+                    My reports
+                </a>
+            <small>Risk information is decision support, not a guarantee of road conditions.</small>
+            </div>
+        </footer>
+        <div
+            id="toast"
+            class="toast"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+        ></div>
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <script src="~/js/site.js" asp-append-version="true"></script>
+        @await RenderSectionAsync("Scripts", false)
+    </body>
 </html>

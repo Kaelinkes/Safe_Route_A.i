@@ -1,0 +1,68 @@
+@{
+    ViewData["Title"] = "Compare routes";
+}
+
+<section class="page-head">
+    <div class="eyebrow">ROUTE DECISIONS</div>
+    <h1>Compare your <em>options.</em></h1>
+    <p>Compare travel time, distance and risk information side by side.</p>
+</section>
+
+<section class="content compare-page" aria-labelledby="compareTitle">
+    <div class="content-title">
+        <div>
+            <div class="eyebrow">ROUTE COMPARISON</div>
+            <h2 id="compareTitle">Route options</h2>
+            <p>Routes will appear here when routing data is available.</p>
+        </div>
+        <a class="btn outline" asp-action="Plan">← Back to route planner</a>
+    </div>
+
+    <label class="compare-sort" for="compareSort">
+        Sort routes by
+        <select id="compareSort" disabled aria-describedby="comparisonEmpty">
+            <option value="recommended">Recommended</option>
+            <option value="fastest">Fastest</option>
+            <option value="lowest-risk">Lowest risk</option>
+        </select>
+    </label>
+
+    <div class="table-scroll">
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Route</th>
+                    <th>Distance</th>
+                    <th>Estimated time</th>
+                    <th>Risk classification</th>
+                    <th>Risk score</th>
+                    <th>Main factor</th>
+                </tr>
+            </thead>
+            <tbody id="compareRows"></tbody>
+        </table>
+    </div>
+
+    <div class="empty-state" id="comparisonEmpty" role="status">
+        <h2>No routes available yet.</h2>
+        <p>Route comparison is unavailable until route data is connected.</p>
+    </div>
+
+    <div class="high-risk-banner" id="compareHighWarning" hidden>
+        <span class="warning-icon" aria-hidden="true">!</span>
+        <div>
+            <b>High-risk route information</b>
+            <p>High-risk guidance will appear when a route assessment is available.</p>
+        </div>
+    </div>
+
+    <div class="insufficient-panel">
+        <h2>Risk assessment</h2>
+        <p>Risk assessment is not available yet.</p>
+        <p class="tiny-note">
+            Insufficient risk data for a route is different from an unavailable assessment service.
+        </p>
+        <p class="tiny-note">Weather information is currently unavailable.</p>
+        <span id="retryMessage" class="route-message" role="status" aria-live="polite" hidden></span>
+    </div>
+</section>
