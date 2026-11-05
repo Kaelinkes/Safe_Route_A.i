@@ -1,4 +1,5 @@
 
+using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using SafeRouteAI.API.DTOs;
 using SafeRouteAI.API.Interfaces;
@@ -31,12 +32,34 @@ public class RoutesController : ControllerBase
         }
         catch (RouteServiceUnavailableException)
         {
-            return StatusCode(503, new ProblemDetails
-            {
-                Title = "Routing service unavailable",
-                Detail = "Real route calculation is not connected yet.",
-                Status = 503
-            });
+            return Problem(
+                statusCode: 503,
+                title: "Routing service unavailable",
+                detail: "Real route calculation is not connected yet.");
+        }
+        catch (HttpRequestException ex)
+            when (ex.StatusCode == HttpStatusCode.NotFound ||
+                  ex.StatusCode == HttpStatusCode.BadRequest)
+        {
+            return Problem(
+                statusCode: 422,
+                title: "Route could not be calculated",
+                detail: "No valid driving route could be found for the supplied locations.");
+        }
+        catch (HttpRequestException ex)
+            when (ex.StatusCode == HttpStatusCode.TooManyRequests)
+        {
+            return Problem(
+                statusCode: 503,
+                title: "Routing provider temporarily unavailable",
+                detail: "The routing provider is currently limiting requests. Please try again later.");
+        }
+        catch (HttpRequestException)
+        {
+            return Problem(
+                statusCode: 502,
+                title: "Routing provider error",
+                detail: "The routing provider could not complete the request.");
         }
     }
 }

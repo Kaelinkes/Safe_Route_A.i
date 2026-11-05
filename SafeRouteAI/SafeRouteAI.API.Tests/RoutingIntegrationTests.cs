@@ -12,11 +12,8 @@ namespace SafeRouteAI.API.Tests;
 
 public class RoutingIntegrationTests
 {
-    [Theory]
-    [InlineData("Unavailable")]
-    [InlineData("Backend")]
-    public async Task RoutingProviders_Return503UntilConnected(
-        string provider)
+    [Fact]
+    public async Task UnavailableProvider_Returns503()
     {
         using var factory = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
@@ -27,7 +24,8 @@ public class RoutingIntegrationTests
                         configuration.AddInMemoryCollection(
                             new Dictionary<string, string?>
                             {
-                                ["RoutingIntegration:Provider"] = provider
+                                ["RoutingIntegration:Provider"] =
+                                    "Unavailable"
                             });
                     });
             });
@@ -68,12 +66,16 @@ public class RoutingIntegrationTests
 
         var services = new ServiceCollection();
 
+        services.AddSingleton<IConfiguration>(configuration);
+
         services.AddRoutingIntegration(configuration);
 
         using var provider = services.BuildServiceProvider();
+        using var scope = provider.CreateScope();
 
         var routingService =
-            provider.GetRequiredService<IRouteComparisonService>();
+            scope.ServiceProvider
+                .GetRequiredService<IRouteComparisonService>();
 
         Assert.IsType<BackendRouteComparisonService>(
             routingService);
