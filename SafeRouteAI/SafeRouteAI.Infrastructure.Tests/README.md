@@ -2,25 +2,30 @@
 
 The infrastructure integration test exercises `SafeRouteDbContext` against a
 real SQL Server database. It is different from an in-memory unit test: it
-checks the SQL Server provider, migrations, constraints, and persisted data.
+checks the SQL Server provider, migrations, and persisted data.
 
 ## What the current test verifies
 
-`SafeRouteDbContextIntegrationTests.RiskCategory_CanBeInsertedReadAndUpdated`
+`SafeRouteDbContextIntegrationTests.AccidentRecord_CanBeInsertedReadAndUpdated`
 does the following:
 
 1. Reads `SAFEROUTE_TEST_CONNECTION_STRING` from the test process environment.
 2. Refuses to run against a database whose name does not contain `Test`
    (case-insensitive).
 3. Applies pending EF Core migrations to that database.
-4. Inserts a uniquely named risk category and saves it.
-5. Reads it back without tracking and verifies its initial sort order.
-6. Updates the sort order, saves, reads it back again, and verifies the change.
+4. Inserts a Domain `AccidentRecord` and saves it.
+5. Reads it back without tracking and verifies its initial severity.
+6. Updates the severity, saves, reads it back again, and verifies the change.
 7. Rolls back the transaction so the test row is not retained.
 
+The companion model test verifies that EF includes exactly the Domain entity
+types and defines no SQL check constraints.
+
 The migration step itself is not rolled back; schema changes remain in the
-test database. The test should therefore use a disposable test database, never
-a production or important development database.
+test database. The current migration set is a fresh baseline for the Domain
+schema. Use a newly created or disposable test database; do not apply it to a
+production or important development database. If the test database has the
+previous migration history/schema, recreate it before running this test.
 
 ## Prerequisites
 

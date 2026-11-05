@@ -1,15 +1,36 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
+using SafeRouteAI.Domain.Entities;
 using SafeRouteAI.Infrastructure.Persistence;
-using SafeRouteAI.Infrastructure.Persistence.Entities;
 
 namespace SafeRouteAI.Infrastructure.Tests;
 
 public sealed class SafeRouteDbContextIntegrationTests
 {
+    [Fact]
+    public void ModelContainsOnlyDomainEntitiesAndNoCheckConstraints()
+    {
+        var options = new DbContextOptionsBuilder<SafeRouteDbContext>()
+            .UseSqlServer("Server=localhost;Database=SafeRouteModelTest;User Id=test;Password=test;TrustServerCertificate=True")
+            .Options;
+
+        using var db = new SafeRouteDbContext(options);
+        var expectedEntities = typeof(User).Assembly.GetTypes()
+            .Where(type => type.IsClass &&
+                           !type.IsAbstract &&
+                           type.Namespace == typeof(User).Namespace)
+            .ToHashSet();
+        var modelEntities = db.GetService<IDesignTimeModel>().Model.GetEntityTypes();
+
+        Assert.Equal(expectedEntities, modelEntities.Select(entity => entity.ClrType).ToHashSet());
+        Assert.All(modelEntities, entity => Assert.Empty(entity.GetCheckConstraints()));
+    }
+
     [SqlServerFact]
     [Trait("Category", "Integration")]
-    public async Task RiskCategory_CanBeInsertedReadAndUpdated()
+    public async Task AccidentRecord_CanBeInsertedReadAndUpdated()
     {
         var connectionString =
             Environment.GetEnvironmentVariable("SAFEROUTE_TEST_CONNECTION_STRING")
@@ -35,30 +56,33 @@ public sealed class SafeRouteDbContextIntegrationTests
 
         await using var transaction = await db.Database.BeginTransactionAsync();
 
-        var categoryCode = $"t{Guid.NewGuid():N}"[..20];
-        db.RiskCategories.Add(new RiskCategoryRecord
+        var accident = new AccidentRecord
         {
-            CategoryCode = categoryCode,
-            SortOrder = 90
-        });
+            Latitude = -26.2041m,
+            Longitude = 28.0473m,
+            DateTime = DateTime.UtcNow,
+            AccidentType = "Integration test",
+            Severity = "Low"
+        };
+        db.AccidentRecords.Add(accident);
         await db.SaveChangesAsync();
 
         db.ChangeTracker.Clear();
-        var inserted = await db.RiskCategories
+        var inserted = await db.AccidentRecords
             .AsNoTracking()
-            .SingleAsync(category => category.CategoryCode == categoryCode);
-        Assert.Equal((short)90, inserted.SortOrder);
+            .SingleAsync(record => record.AccidentID == accident.AccidentID);
+        Assert.Equal("Low", inserted.Severity);
 
-        var category = await db.RiskCategories
-            .SingleAsync(item => item.CategoryCode == categoryCode);
-        category.SortOrder = 91;
+        var record = await db.AccidentRecords
+            .SingleAsync(item => item.AccidentID == accident.AccidentID);
+        record.Severity = "Moderate";
         await db.SaveChangesAsync();
 
         db.ChangeTracker.Clear();
-        var updated = await db.RiskCategories
+        var updated = await db.AccidentRecords
             .AsNoTracking()
-            .SingleAsync(item => item.CategoryCode == categoryCode);
-        Assert.Equal((short)91, updated.SortOrder);
+            .SingleAsync(item => item.AccidentID == accident.AccidentID);
+        Assert.Equal("Moderate", updated.Severity);
 
         await transaction.RollbackAsync();
     }
