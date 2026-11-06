@@ -1,7 +1,5 @@
 ﻿using SafeRouteAI.Application.DTOs;
-using SafeRouteAI.Domain.Entities;
 using SafeRouteAI.Domain.Enums;
-using SafeRouteAI.Application.Services;
 
 namespace SafeRouteAI.Application.Interfaces;
 
@@ -24,8 +22,9 @@ public interface IRiskService
 
 public interface ICommunityReportRepository
 {
-    Task AddAsync(CommunityReport report);
-    Task<List<CommunityReport>> GetApprovedAsync();
+    Task AddAsync(CommunityReportDto report);
+    Task<List<CommunityReportDto>> GetPendingAsync();
+    Task<List<CommunityReportDto>> GetApprovedAsync();
     Task UpdateStatusAsync(int reportId, ReportStatus status, int adminId);
 }
 

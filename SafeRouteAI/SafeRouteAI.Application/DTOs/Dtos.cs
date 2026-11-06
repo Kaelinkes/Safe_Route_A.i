@@ -24,8 +24,19 @@ public record RiskAssessmentDto(
     double? Score,
     RiskLevel? Level,
     List<string> Factors);
-public record RankedRouteDto(
-    int Rank, 
-    RouteOptionDto Route,
-    RiskAssessmentDto Risk, 
-    bool IsHighRisk);
+
+public record RankedRouteDto(int Rank, RouteOptionDto Route, RiskAssessmentDto Risk, bool IsHighRisk);
+
+public class CommunityReportDto
+{
+    public int ReportId { get; set; }
+    public int UserId { get; set; }
+    public double Latitude { get; set; }
+    public double Longitude { get; set; }
+    public string IncidentType { get; set; } = "";
+    public string? Description { get; set; }
+    public DateTime ReportedAt { get; set; }
+    public ReportStatus Status { get; set; } = ReportStatus.Pending;
+    public int? ReviewedByAdminId { get; set; }
+    public DateTime? ReviewedAt { get; set; }
+}
