@@ -1,12 +1,25 @@
-﻿namespace SafeRouteAI.Domain.Entities;
+namespace SafeRouteAI.Domain.Entities;
 
 public class RouteOption
 {
-    public int RouteOptionId { get; set; }
-    public int RouteId { get; set; }
-    public string RouteInformation { get; set; } = "";
-    public int TravelTime { get; set; }
-    public decimal Distance { get; set; }
-    public decimal? RiskScore { get; set; }
-    public List<RoadSegment> Segments { get; set; } = new();
+    public int RouteOptionID { get; set; }
+
+    public int RouteID { get; set; }
+
+    public string RouteInfo { get; set; } = string.Empty;
+
+    public string Geometry { get; set; } = string.Empty;
+
+    public double Distance { get; set; }
+
+    public double EstTimeMin { get; set; }
+
+    public double? RiskScore { get; set; }
+
+    public int Rank { get; set; }
+
+    public Route? Route { get; set; }
+
+    public ICollection<RouteOptionRoadSegment> RouteOptionRoadSegments { get; set; }
+        = new List<RouteOptionRoadSegment>();
 }

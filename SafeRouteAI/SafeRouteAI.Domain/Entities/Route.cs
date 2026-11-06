@@ -1,11 +1,17 @@
-﻿namespace SafeRouteAI.Domain.Entities;
+
+namespace SafeRouteAI.Domain.Entities;
 
 public class Route
 {
-    public int RouteId { get; set; }
-    public string UserId { get; set; } = "";
-    public string Origin { get; set; } = "";
-    public string Destination { get; set; } = "";
+    public int RouteID { get; set; }
+
+    public int? UserID { get; set; }
+
+    public string Origin { get; set; } = string.Empty;
+
+    public string Destination { get; set; } = string.Empty;
+
     public DateTime RequestDateTime { get; set; }
-    public List<RouteOption> Options { get; set; } = new();
+
+    public User? User { get; set; }
 }
