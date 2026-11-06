@@ -59,6 +59,7 @@
                     </select>
                 </label>
             </div>
+            <p id="riskPredictionNotice" class="route-message error" role="status" aria-live="polite" hidden></p>
             <div id="routeCards" class="route-card-list" aria-live="polite">
                 <div class="empty-state"><h3>No routes available yet.</h3><p>Select both locations on the map to request route options. Results appear only when the routing service returns valid route data.</p></div>
             </div>
@@ -73,6 +74,7 @@
                 <label class="community-toggle"><input id="showCommunityReports" type="checkbox" disabled /> Community reports unavailable</label>
             </div>
             <div id="routeMap" class="planner-map" role="region" aria-label="Interactive map. Choose origin or destination, then click to select coordinates."></div>
+            <p id="routeMapStatus" class="route-message" role="status" aria-live="polite">Route geometry will appear on the map when the service returns valid LineString data.</p>
             <p class="map-attribution">
                 Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>
                 · Map powered by <a href="https://leafletjs.com" target="_blank" rel="noopener noreferrer">Leaflet</a>
@@ -122,7 +124,11 @@
     <ul id="routeSegmentSummary" class="segment-summary"></ul>
 </section>
 
+@section Styles {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+}
 @section Scripts {
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="~/js/route-weather.js" asp-append-version="true"></script>
 <script src="~/js/route-comparison.js" asp-append-version="true"></script>
 <script>
@@ -135,16 +141,65 @@
         const markers = {};
         const selectedCoordinates = { origin: null, destination: null };
         let map = null;
+        let routeGeometryLayer = null;
         let pickField = null;
+        const routeMapStatus = document.getElementById("routeMapStatus");
+        const routeSummary = document.getElementById("routeSummary");
 
-        try {
-            origin.value = sessionStorage.getItem("sr-origin") || origin.value;
-            destination.value = sessionStorage.getItem("sr-destination") || destination.value;
-            sessionStorage.removeItem("sr-origin");
-            sessionStorage.removeItem("sr-destination");
-        } catch {
-            /* Direct route planning works without the optional location handoff. */
+        function clearRouteGeometry() {
+            if (map && routeGeometryLayer) {
+                map.removeLayer(routeGeometryLayer);
+            }
+            routeGeometryLayer = null;
+            routeSummary.textContent = "No route selected.";
         }
+
+        document.addEventListener("saferoute:route-map-status", (event) => {
+            routeMapStatus.textContent = event.detail?.message || "Route geometry is unavailable.";
+        });
+
+        document.addEventListener("saferoute:route-map-clear", clearRouteGeometry);
+
+        document.addEventListener("saferoute:route-geometries", (event) => {
+            clearRouteGeometry();
+
+            if (!map || !window.L) {
+                routeMapStatus.textContent = "The map is unavailable. Route cards remain available.";
+                return;
+            }
+
+            const routeGeometries = Array.isArray(event.detail?.routes)
+                ? event.detail.routes.filter((route) => route?.geometry?.type === "LineString")
+                : [];
+
+            if (routeGeometries.length === 0) {
+                routeMapStatus.textContent = "Route cards are available, but no valid route geometry was returned for the map.";
+                return;
+            }
+
+            const routeColors = ["#0f8b80", "#3478b8", "#7b61a8"];
+            routeGeometryLayer = L.featureGroup();
+            routeGeometries.forEach((route, index) => {
+                L.geoJSON(route.geometry, {
+                    style: {
+                        color: routeColors[index % routeColors.length],
+                        weight: 5,
+                        opacity: 0.85,
+                    },
+                }).addTo(routeGeometryLayer);
+            });
+
+            routeGeometryLayer.addTo(map);
+            const bounds = routeGeometryLayer.getBounds();
+            if (bounds.isValid()) {
+                map.fitBounds(bounds.pad(0.12), { maxZoom: 14 });
+            }
+
+            const totalRoutes = Number.isInteger(event.detail?.totalRoutes)
+                ? event.detail.totalRoutes
+                : routeGeometries.length;
+            routeMapStatus.textContent = `Map geometry is displayed for ${routeGeometries.length} of ${totalRoutes} calculated routes.`;
+        });
 
         function setError(field, text) {
             const errorId = field === origin ? "originError" : "destinationError";

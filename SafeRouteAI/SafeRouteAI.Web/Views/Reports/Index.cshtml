@@ -156,12 +156,21 @@
             <small>Choose a point on the map to enter coordinates.</small>
     </aside>
 </section>
+@section Styles {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+}
 @section Scripts {
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", () => {
         const form = document.getElementById("incidentForm"),
             locationField = document.getElementById("incidentLocation"),
-            mapNode = document.getElementById("incidentMap");
+            mapNode = document.getElementById("incidentMap"),
+            type = document.getElementById("incidentType"),
+            accurate = document.getElementById("reportAccurate"),
+            typeError = document.getElementById("incidentTypeError"),
+            locationError = document.getElementById("incidentLocationError"),
+            accurateError = document.getElementById("reportAccurateError");
         let map = null,
             marker = null,
             picking = false;
@@ -273,17 +282,9 @@
                 locationField.value = "";
                 document.getElementById("descriptionCount").value =
                     "0/500";
-                setInlineError(
-                    document.getElementById("incidentType"),
-                    typeError,
-                    "",
-                );
+                setInlineError(type, typeError, "");
                 setInlineError(locationField, locationError, "");
-                setInlineError(
-                    document.getElementById("reportAccurate"),
-                    accurateError,
-                    "",
-                );
+                setInlineError(accurate, accurateError, "");
                 message.hidden = true;
                 if (marker) {
                     marker.remove();

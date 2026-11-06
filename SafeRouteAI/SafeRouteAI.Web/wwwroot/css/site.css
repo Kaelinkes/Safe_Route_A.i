@@ -929,26 +929,6 @@ footer > div {
 footer small {
     font-size: 9px;
 }
-.toast {
-    position: fixed;
-    z-index: 2000;
-    bottom: 22px;
-    left: 50%;
-    transform: translate(-50%, 15px);
-    opacity: 0;
-    background: #142c40;
-    color: #fff;
-    border-radius: 10px;
-    padding: 12px 18px;
-    font-size: 11px;
-    pointer-events: none;
-    transition: 0.2s;
-    max-width: 90vw;
-}
-.toast.show {
-    opacity: 1;
-    transform: translate(-50%, 0);
-}
 @media (max-width: 950px) {
     .topbar {
         padding: 0 20px;
@@ -1154,35 +1134,6 @@ footer small {
 .nav-action:hover {
     color: var(--teal);
 }
-.demo-role-control {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    white-space: nowrap;
-}
-.demo-role-control label {
-    font-size: 9px;
-    font-weight: 800;
-    color: #71818d;
-}
-.demo-role-control select {
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    background: #fff;
-    color: var(--ink);
-    padding: 7px 9px;
-    font-size: 10px;
-}
-.demo-role-control > span {
-    font-size: 8px;
-    font-weight: 800;
-    letter-spacing: 0.6px;
-    text-transform: uppercase;
-    color: #9b6a25;
-    background: #fff4df;
-    border-radius: 5px;
-    padding: 3px 5px;
-}
 .nav a:focus-visible,
 .nav-action:focus-visible,
 .mobile-menu:focus-visible,
@@ -1302,39 +1253,12 @@ button:disabled {
 .risk.unknown .risk-icon {
     color: #687984;
 }
-.toast {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.toast.show::before {
-    content: "✓";
-    display: grid;
-    place-items: center;
-    flex: 0 0 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: #16a99a;
-    color: white;
-    font-weight: 800;
-}
-.toast[data-kind="error"] {
-    background: #7f2c28;
-}
-.toast[data-kind="error"].show::before {
-    content: "!";
-    background: #fff;
-    color: #7f2c28;
-}
 @media (max-width: 950px) {
     .topbar {
         gap: 12px;
     }
     .nav {
         gap: 13px;
-    }
-    .demo-role-control label {
-        display: none;
     }
 }
 @media (max-width: 760px) {
@@ -1348,11 +1272,6 @@ button:disabled {
         display: block;
         order: 2;
         margin-left: auto;
-    }
-    .demo-role-control {
-        order: 3;
-        width: 100%;
-        justify-content: flex-end;
     }
     .nav {
         display: none;
@@ -1387,12 +1306,6 @@ button:disabled {
     }
     .nav a[aria-current="page"] {
         background: #effaf8;
-    }
-    .demo-role-control label {
-        display: inline;
-    }
-    .demo-role-control {
-        justify-content: flex-start;
     }
     .actions {
         gap: 9px;

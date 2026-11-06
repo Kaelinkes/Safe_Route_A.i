@@ -14,13 +14,10 @@
         />
         <link
             rel="stylesheet"
-            href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        />
-        <link
-            rel="stylesheet"
             href="~/css/site.css"
             asp-append-version="true"
         />
+        @await RenderSectionAsync("Styles", required: false)
     </head>
     <body>
         <header class="topbar">
@@ -84,7 +81,6 @@
                     <a asp-controller="Reports" asp-action="Index">
                         Report incident
                     </a>
-                    <span class="nav-unavailable" aria-disabled="true">Account (unavailable)</span>
                 </div>
                 <div
                     class="role-nav"
@@ -101,19 +97,8 @@
                     <a asp-controller="Admin" asp-action="Analytics">
                         System Analytics
                     </a>
-                    <span class="nav-unavailable" aria-disabled="true">Account (unavailable)</span>
                 </div>
             </nav>
-            <div class="demo-role-control">
-                <label for="demoRole">Demo role</label>
-                <select id="demoRole" aria-label="Demo navigation role" aria-describedby="demoRoleNote">
-                    <option value="visitor">Visitor</option>
-                    <option value="user">Registered user</option>
-                    <option value="admin">Administrator</option>
-                </select>
-                <span aria-hidden="true">Preview only</span>
-                <span id="demoRoleNote" class="visually-hidden">This selector only changes visible navigation. It does not authenticate users or enforce permissions.</span>
-            </div>
         </header>
         <main id="mainContent">
             @if (
@@ -135,25 +120,9 @@
             <span>Designed for safer journeys in South Africa</span>
             <div>
                 <a asp-controller="Home" asp-action="About">About</a>
-                <a
-                    asp-controller="Reports"
-                    asp-action="MyReports"
-                    data-role-footer="user"
-                    hidden
-                >
-                    My reports
-                </a>
             <small>Risk information is decision support, not a guarantee of road conditions.</small>
             </div>
         </footer>
-        <div
-            id="toast"
-            class="toast"
-            role="status"
-            aria-live="polite"
-            aria-atomic="true"
-        ></div>
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
         <script src="~/js/site.js" asp-append-version="true"></script>
         @await RenderSectionAsync("Scripts", false)
     </body>

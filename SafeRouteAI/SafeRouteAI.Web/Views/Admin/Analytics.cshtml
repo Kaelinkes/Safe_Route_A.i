@@ -13,7 +13,7 @@
         <div>
             <div class="eyebrow">ACTIVITY OVERVIEW</div>
             <h2>System activity</h2>
-            <p id="analyticsRangeLabel">Select a date range to prepare a filter.</p>
+            <p id="analyticsRangeLabel">Date range validation is available; analytics filtering is not connected yet.</p>
         </div>
         <form id="analyticsFilter" class="date-filter" method="post" novalidate>
             <label for="analyticsFrom">From</label>
@@ -30,7 +30,7 @@
                 required
                 aria-describedby="analyticsMessage"
             />
-            <button class="btn small" type="submit">Apply range</button>
+            <button class="btn small" type="submit">Check date range</button>
         </form>
     </div>
 
@@ -40,49 +40,41 @@
         <article>
             <small>Route requests</small>
             <strong>Unavailable</strong>
-            <span>No analytics data is currently available.</span>
         </article>
         <article>
             <small>Community reports</small>
             <strong>Unavailable</strong>
-            <span>No analytics data is currently available.</span>
         </article>
         <article>
             <small>Risk assessments</small>
             <strong>Unavailable</strong>
-            <span>No analytics data is currently available.</span>
         </article>
         <article>
             <small>Insufficient risk data</small>
             <strong>Unavailable</strong>
-            <span>No analytics data is currently available.</span>
         </article>
     </section>
 
     <div class="analytics-chart-grid">
         <article class="chart-card">
             <h3>Route requests by day</h3>
-            <p class="chart-subtitle">No analytics data is currently available.</p>
-            <div class="empty-state" role="status">No analytics data is currently available.</div>
+            <div class="empty-state" role="status">No data available.</div>
         </article>
         <article class="chart-card">
             <h3>Reports by status</h3>
-            <p class="chart-subtitle">No analytics data is currently available.</p>
-            <div class="empty-state" role="status">No analytics data is currently available.</div>
+            <div class="empty-state" role="status">No data available.</div>
         </article>
         <article class="chart-card">
             <h3>Reported incident types</h3>
-            <p class="chart-subtitle">No analytics data is currently available.</p>
-            <div class="empty-state" role="status">No analytics data is currently available.</div>
+            <div class="empty-state" role="status">No data available.</div>
         </article>
         <article class="chart-card">
             <h3>Risk level distribution</h3>
-            <p class="chart-subtitle">No analytics data is currently available.</p>
-            <div class="empty-state" role="status">No analytics data is currently available.</div>
+            <div class="empty-state" role="status">No data available.</div>
         </article>
     </div>
 
-    <div class="notice">Analytics is unavailable until a data source is connected.</div>
+    <div class="notice">Analytics filtering and data retrieval are not connected. No request is sent when a date range is checked.</div>
 </section>
 
 @section Scripts {
@@ -119,7 +111,7 @@
                 }
 
                 message.textContent =
-                    "Analytics data is unavailable until an analytics service is connected. No request was sent.";
+                    "Date range is valid. Analytics filtering is not connected, so no request was sent.";
                 message.className = "route-message error";
                 message.hidden = false;
             });

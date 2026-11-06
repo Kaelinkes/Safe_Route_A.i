@@ -14,37 +14,12 @@
             road-safety context alongside distance and travel time.
         </p>
         <div class="searchbox">
-            <label for="origin">Starting point</label>
-            <div class="field">
-                <i class="pin green"></i>
-                <input
-                    id="origin"
-                    placeholder="Where from?"
-                />
-                <button id="swap" type="button" title="Swap locations">
-                    ↕
-                </button>
-            </div>
-            <label for="destination">Destination</label>
-            <div class="field">
-                <i class="pin orange"></i>
-                <input
-                    id="destination"
-                    placeholder="Where to?"
-                />
-            </div>
-            <a
-                class="btn wide"
-                id="find"
-                asp-controller="Routes"
-                asp-action="Plan"
-            >
-                Find safer routes
-                <b>→</b>
+            <p>Ready to plan a journey?</p>
+            <a class="btn wide" asp-controller="Routes" asp-action="Plan">
+                Open Route Planner
+                <b aria-hidden="true">→</b>
             </a>
-            <small>
-                Compare time, distance and available risk information.
-            </small>
+            <small>Select journey points on the map to request route options.</small>
         </div>
         <p class="disclaimer">
             ◇ Risk estimates are decision support, not a guarantee of road
@@ -133,7 +108,11 @@
         </article>
     </div>
 </section>
+@section Styles {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+}
 @section Scripts {
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", () => {
         if (!window.L) return;
