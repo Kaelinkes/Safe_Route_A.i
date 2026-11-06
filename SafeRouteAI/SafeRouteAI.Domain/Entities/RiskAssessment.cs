@@ -1,5 +1,6 @@
 
 namespace SafeRouteAI.Domain.Entities;
+using SafeRouteAI.Domain.Enums;
 
 public class RiskAssessment
 {
@@ -11,9 +12,9 @@ public class RiskAssessment
 
     public double? RiskScore { get; set; }
 
-    public string? RiskLevel { get; set; }
+    public RiskLevel? RiskLevel { get; set; }
 
-    public string AssessmentStatus { get; set; } = string.Empty;
+    public AssessmentStatus AssessmentStatus { get; set; }
 
     // Navigation properties
     public RoadSegment? RoadSegment { get; set; }
