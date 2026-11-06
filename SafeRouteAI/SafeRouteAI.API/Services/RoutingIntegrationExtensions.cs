@@ -30,16 +30,13 @@ public static class RoutingIntegrationExtensions
                 break;
 
             case "backend":
-                // Make configuration available to Backend services,
-                // including RouteService.
+                // Provide configuration to Backend services.
                 services.AddSingleton<IConfiguration>(configuration);
 
-                // Register Backend routing, weather, risk,
-                // and route comparison services.
+                // Keep existing routing registration behavior
+                // for API tests and standalone consumers.
                 services.AddInfrastructure();
 
-                // Select the risk assessment implementation.
-                // Fake remains the default until real ML is ready.
                 var riskProvider =
                     configuration["MlIntegration:RouteRiskProvider"]
                     ?? "Fake";
@@ -47,14 +44,9 @@ public static class RoutingIntegrationExtensions
                 switch (riskProvider.Trim().ToLowerInvariant())
                 {
                     case "fake":
-                        // Preserve the Backend's existing FakeRiskService.
                         break;
 
                     case "apibridge":
-                        // Override the Backend's risk service with
-                        // our API-owned ML bridge.
-                        //
-                        // Routing and weather services remain unchanged.
                         services.AddScoped<
                             IRiskService,
                             ApiRiskServiceBridge>();
@@ -65,13 +57,10 @@ public static class RoutingIntegrationExtensions
                             $"Unsupported route risk provider '{riskProvider}'.");
                 }
 
-                // Connect the API adapter to Backend routing.
                 services.AddScoped<
                     IBackendRouteClient,
                     RealBackendRouteClient>();
 
-                // Expose Backend route comparison through
-                // the existing API contract.
                 services.AddScoped<
                     IRouteComparisonService,
                     BackendRouteComparisonService>();
