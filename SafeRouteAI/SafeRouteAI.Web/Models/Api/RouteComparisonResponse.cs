@@ -4,7 +4,9 @@ public sealed class RouteComparisonResponse
 {
     public required List<RouteOptionResponse> Routes { get; init; }
 
-    public required bool IsMock { get; init; }
+    public required bool IsRoutingMock { get; init; }
+
+    public required bool IsRiskMock { get; init; }
 }
 
 public sealed class RouteOptionResponse

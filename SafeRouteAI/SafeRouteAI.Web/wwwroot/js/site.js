@@ -55,53 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    const rolePreview = document.getElementById("demoRole");
-    const availableRoles = new Set(["visitor", "user", "admin"]);
-    function applyDemoRole(role, persist = false) {
-        const activeRole = availableRoles.has(role) ? role : "visitor";
-        document.querySelectorAll("[data-role-nav]").forEach((roleNav) => {
-            roleNav.hidden = roleNav.dataset.roleNav !== activeRole;
-        });
-        document.querySelectorAll('[data-role-footer="user"]').forEach((item) => {
-            item.hidden = activeRole !== "user";
-        });
-        if (rolePreview) rolePreview.value = activeRole;
-        updateActiveNavigation();
-        if (persist) {
-            try {
-                sessionStorage.setItem("saferoute-demo-role", activeRole);
-            } catch {
-                /* Role preview still works when session storage is unavailable. */
-            }
-        }
-    }
-
-    let savedRole = "visitor";
-    try {
-        savedRole = sessionStorage.getItem("saferoute-demo-role") || savedRole;
-    } catch {
-        /* Visitor navigation is the default when session storage is unavailable. */
-    }
-    applyDemoRole(savedRole);
-    rolePreview?.addEventListener("change", () => {
-        applyDemoRole(rolePreview.value, true);
-        closeMenu(false);
-    });
-
-    document.getElementById("swap")?.addEventListener("click", () => {
-        const origin = document.getElementById("origin");
-        const destination = document.getElementById("destination");
-        if (origin && destination) [origin.value, destination.value] = [destination.value, origin.value];
-    });
-
-    document.getElementById("find")?.addEventListener("click", () => {
-        try {
-            sessionStorage.setItem("sr-origin", document.getElementById("origin").value);
-            sessionStorage.setItem("sr-destination", document.getElementById("destination").value);
-        } catch {
-            /* Location handoff is optional. */
-        }
-    });
+    updateActiveNavigation();
 
     document.addEventListener(
         "invalid",
@@ -174,16 +128,6 @@ document.addEventListener("DOMContentLoaded", () => {
         true,
     );
 });
-
-function showToast(message, kind = "success") {
-    const toast = document.getElementById("toast");
-    if (!toast) return;
-    toast.textContent = message;
-    toast.dataset.kind = kind;
-    toast.classList.add("show");
-    clearTimeout(window.srt);
-    window.srt = setTimeout(() => toast.classList.remove("show"), 4500);
-}
 
 function setInlineError(field, error, message) {
     if (!field || !error) return;

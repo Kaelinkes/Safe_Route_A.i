@@ -14,50 +14,34 @@ public static class BackendRouteResponseMapper
 
         return new RouteComparisonResponse
         {
-            // Routing will be real, but the current
-            // backend risk calculation is simulated.
-            IsMock = true,
+            // The Backend calculates actual routes.
+            IsRoutingMock = false,
+
+            // Risk predictions are not yet produced
+            // by the verified Python ML model.
+            IsRiskMock = true,
 
             Routes = routes
                 .OrderBy(r => r.Rank)
                 .Select(r => new RouteOptionResponse
                 {
                     RouteId = r.Route.RouteId,
+
                     DistanceKm = r.Route.DistanceKm,
+
                     DurationMinutes = r.Route.DurationMinutes,
+
+                    // Preserve the Backend's GeoJSON
+                    // LineString geometry as a string.
                     Geometry = r.Route.Geometry,
-                    RiskLevel = MapRiskLevel(r.Risk),
-                    RiskScore = IsValidAssessment(r.Risk)
-                        ? r.Risk.Score
-                        : null
+
+                    // Do not expose simulated risk
+                    // classifications as verified.
+                    RiskLevel = RiskLevel.InsufficientData,
+
+                    RiskScore = null
                 })
                 .ToList()
-        };
-    }
-
-    private static bool IsValidAssessment(
-        BackendRiskAssessment risk)
-    {
-        return string.Equals(
-            risk.Status,
-            "Valid",
-            StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static RiskLevel MapRiskLevel(
-        BackendRiskAssessment risk)
-    {
-        if (!IsValidAssessment(risk))
-        {
-            return RiskLevel.InsufficientData;
-        }
-
-        return risk.Level?.Trim().ToLowerInvariant() switch
-        {
-            "low" => RiskLevel.Low,
-            "medium" => RiskLevel.Medium,
-            "high" => RiskLevel.High,
-            _ => RiskLevel.InsufficientData
         };
     }
 }

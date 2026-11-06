@@ -15,28 +15,33 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services)
     {
-        // Routing, weather and risk services
+        // Weather provider HTTP client.
         services.AddHttpClient<IWeatherService, WeatherService>(
             client =>
             {
                 client.Timeout = TimeSpan.FromSeconds(10);
             });
 
+        // Real routing provider HTTP client.
         services.AddHttpClient<IRouteService, RouteService>(
             client =>
             {
-                client.Timeout = TimeSpan.FromSeconds(15);
+                client.Timeout = TimeSpan.FromSeconds(30);
             });
 
+        // Backend risk service.
+        // FakeRiskService remains active until real ML integration.
         services.AddScoped<IRiskService, FakeRiskService>();
+
+        // Backend route comparison service.
         services.AddScoped<RouteComparisonService>();
 
-        // Database configuration
-        // Preserve the existing connection-string behavior.
+        // SQL Server database context.
         services.AddDbContext<AppDbContext>((sp, options) =>
         {
-            var connectionString = sp.GetService<IConfiguration>()
-                ?.GetConnectionString("DefaultConnection")
+            var connectionString = sp
+                .GetService<IConfiguration>()?
+                .GetConnectionString("DefaultConnection")
                 ?? AppDbContext.DefaultConnection;
 
             options.UseSqlServer(
@@ -44,29 +49,22 @@ public static class DependencyInjection
                 sql => sql.EnableRetryOnFailure());
         });
 
-        // Authentication dependencies
+        // Authentication services.
         services.AddSingleton(TimeProvider.System);
-
-        services.AddSingleton<
-            IPasswordHasher,
-            Pbkdf2PasswordHasher>();
-
+        services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
         services.AddSingleton<AuthMemoryState>();
-
         services.AddScoped<IUserStore, UserStore>();
         services.AddScoped<AuthService>();
 
-        // Community reports
+        // Community report services.
         services.AddScoped<
             ICommunityReportRepository,
             CommunityReportRepository>();
 
         services.AddScoped<CommunityReportService>();
 
-        // Route request logging
-        services.AddScoped<
-            IRouteLogRepository,
-            RouteLogRepository>();
+        // Route logging repository.
+        services.AddScoped<IRouteLogRepository, RouteLogRepository>();
 
         return services;
     }

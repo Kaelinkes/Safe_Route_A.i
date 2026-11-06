@@ -31,22 +31,35 @@ public class BackendRouteComparisonServiceTests
 
         var response = await service.CompareAsync(request);
 
+        // Verify coordinates are forwarded correctly.
         Assert.Equal(-26.2041, fakeClient.OriginLatitude);
         Assert.Equal(28.0473, fakeClient.OriginLongitude);
         Assert.Equal(-26.1367, fakeClient.DestinationLatitude);
         Assert.Equal(28.1976, fakeClient.DestinationLongitude);
 
+        // Verify real routing and simulated risk flags.
+        Assert.False(response.IsRoutingMock);
+        Assert.True(response.IsRiskMock);
+
+        // Verify the Backend route is preserved.
         var route = Assert.Single(response.Routes);
 
         Assert.Equal("route-1", route.RouteId);
         Assert.Equal(12.5, route.DistanceKm);
         Assert.Equal(20.0, route.DurationMinutes);
-        Assert.Equal(RiskLevel.Low, route.RiskLevel);
-        Assert.Equal(0.2, route.RiskScore);
+
+        // Simulated risk values must not be exposed
+        // as verified safety predictions.
+        Assert.Equal(
+            RiskLevel.InsufficientData,
+            route.RiskLevel);
+
+        Assert.Null(route.RiskScore);
+
+        // Preserve the Backend's route geometry.
         Assert.Equal(
             "{\"type\":\"LineString\"}",
             route.Geometry);
-        Assert.True(response.IsMock);
     }
 
     [Fact]

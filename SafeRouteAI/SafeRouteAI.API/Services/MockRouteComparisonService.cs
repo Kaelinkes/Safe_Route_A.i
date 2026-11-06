@@ -13,7 +13,8 @@ public class MockRouteComparisonService : IRouteComparisonService
     {
         var response = new RouteComparisonResponse
         {
-            IsMock = true,
+            IsRoutingMock = true,
+            IsRiskMock = true,
             Routes = new List<RouteOptionResponse>
             {
                 new()

@@ -7,7 +7,9 @@ public class RouteComparisonResponse
 {
     public List<RouteOptionResponse> Routes { get; set; } = new();
 
-    public bool IsMock { get; set; }
+    public bool IsRoutingMock { get; set; }
+
+    public bool IsRiskMock { get; set; }
 }
 
 public class RouteOptionResponse

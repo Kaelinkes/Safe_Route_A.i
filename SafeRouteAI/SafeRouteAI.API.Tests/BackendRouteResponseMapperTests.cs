@@ -9,11 +9,11 @@ namespace SafeRouteAI.API.Tests;
 public class BackendRouteResponseMapperTests
 {
     [Theory]
-    [InlineData("Low", RiskLevel.Low)]
-    [InlineData("Medium", RiskLevel.Medium)]
-    [InlineData("High", RiskLevel.High)]
-    public void Map_ValidRisk_MapsLevelCorrectly(
-        string level, RiskLevel expected)
+    [InlineData("Low")]
+    [InlineData("Medium")]
+    [InlineData("High")]
+    public void Map_SimulatedRisk_ReturnsInsufficientData(
+        string level)
     {
         var route = CreateRoute(
             1, "Valid", 0.5, level);
@@ -21,13 +21,19 @@ public class BackendRouteResponseMapperTests
         var result = BackendRouteResponseMapper.Map(
             new[] { route });
 
-        Assert.Equal(
-            expected,
-            result.Routes[0].RiskLevel);
+        var mapped = Assert.Single(result.Routes);
 
+        // Routing is real, but risk is simulated.
+        Assert.False(result.IsRoutingMock);
+        Assert.True(result.IsRiskMock);
+
+        // Simulated risk must not appear as
+        // a verified ML prediction.
         Assert.Equal(
-            0.5,
-            result.Routes[0].RiskScore);
+            RiskLevel.InsufficientData,
+            mapped.RiskLevel);
+
+        Assert.Null(mapped.RiskScore);
     }
 
     [Fact]
@@ -39,11 +45,16 @@ public class BackendRouteResponseMapperTests
         var result = BackendRouteResponseMapper.Map(
             new[] { route });
 
+        var mapped = Assert.Single(result.Routes);
+
         Assert.Equal(
             RiskLevel.InsufficientData,
-            result.Routes[0].RiskLevel);
+            mapped.RiskLevel);
 
-        Assert.Null(result.Routes[0].RiskScore);
+        Assert.Null(mapped.RiskScore);
+
+        Assert.False(result.IsRoutingMock);
+        Assert.True(result.IsRiskMock);
     }
 
     [Fact]
@@ -57,6 +68,8 @@ public class BackendRouteResponseMapperTests
 
         var result = BackendRouteResponseMapper.Map(
             new[] { second, first });
+
+        Assert.Equal(2, result.Routes.Count);
 
         Assert.Equal(
             "route-1",
@@ -78,11 +91,20 @@ public class BackendRouteResponseMapperTests
 
         var mapped = Assert.Single(result.Routes);
 
+        Assert.Equal("route-1", mapped.RouteId);
         Assert.Equal(12.5, mapped.DistanceKm);
         Assert.Equal(20.0, mapped.DurationMinutes);
+
+        // Keep the Backend geometry unchanged.
         Assert.Equal(
             "{\"type\":\"LineString\"}",
             mapped.Geometry);
+
+        Assert.Equal(
+            RiskLevel.InsufficientData,
+            mapped.RiskLevel);
+
+        Assert.Null(mapped.RiskScore);
     }
 
     [Fact]
@@ -92,6 +114,16 @@ public class BackendRouteResponseMapperTests
             Array.Empty<BackendRankedRoute>());
 
         Assert.Empty(result.Routes);
+
+        Assert.False(result.IsRoutingMock);
+        Assert.True(result.IsRiskMock);
+    }
+
+    [Fact]
+    public void Map_NullRoutes_ThrowsArgumentNullException()
+    {
+        Assert.Throws<ArgumentNullException>(
+            () => BackendRouteResponseMapper.Map(null!));
     }
 
     private static BackendRankedRoute CreateRoute(

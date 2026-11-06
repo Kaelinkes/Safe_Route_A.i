@@ -50,7 +50,15 @@ public class RoutesController : ControllerBase
             return Problem(
                 statusCode: 503,
                 title: "Routing service unavailable",
-                detail: "Real route calculation is not connected yet.");
+                detail: "Real route calculation is currently unavailable.");
+        }
+        catch (OperationCanceledException)
+            when (!cancellationToken.IsCancellationRequested)
+        {
+            return Problem(
+                statusCode: 503,
+                title: "Routing provider timeout",
+                detail: "The routing provider took too long to respond. Please try again.");
         }
         catch (HttpRequestException)
         {
