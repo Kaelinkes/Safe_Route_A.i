@@ -13,7 +13,7 @@ public enum RiskLevel
     High
 }
 
-public enum ReportStatus
+public enum CommunityReportStatus
 {
     Pending,
     Approved,

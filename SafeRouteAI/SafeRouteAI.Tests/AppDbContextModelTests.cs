@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SafeRouteAI.Domain.Entities;
+using SafeRouteAI.Domain.Enums;
 using SafeRouteAI.Infrastructure.Data;
 
 namespace SafeRouteAI.Tests;
@@ -55,6 +56,12 @@ public sealed class AppDbContextModelTests
         Assert.Equal("humidity", entityTypes[typeof(WeatherLog)]
             .FindProperty(nameof(WeatherLog.Humidity))!
             .GetColumnName());
+
+        var status = entityTypes[typeof(CommunityReport)]
+            .FindProperty(nameof(CommunityReport.Status))!;
+        Assert.Equal(typeof(CommunityReportStatus), status.ClrType);
+        Assert.Equal(typeof(string), status.GetTypeMapping().Converter!.ProviderClrType);
+        Assert.Equal("nvarchar(max)", status.GetColumnType());
     }
 
     private static void AssertRelationship<TDependent, TPrincipal>(

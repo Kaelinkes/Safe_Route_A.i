@@ -29,5 +29,5 @@ public interface ICommunityReportRepository
 {
     Task AddAsync(CommunityReport report);
     Task<List<CommunityReport>> GetApprovedAsync();
-    Task UpdateStatusAsync(int reportId, ReportStatus status, int adminId);
+    Task UpdateStatusAsync(int reportId, CommunityReportStatus status, int adminId);
 }

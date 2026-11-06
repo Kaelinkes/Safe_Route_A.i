@@ -93,6 +93,7 @@ public class AppDbContext : DbContext
         {
             entity.HasKey(x => x.ReportID);
             entity.Property(x => x.ReportID).ValueGeneratedOnAdd();
+            entity.Property(x => x.Status).HasConversion<string>();
             entity.Property(x => x.Latitude).HasPrecision(9, 6);
             entity.Property(x => x.Longitude).HasPrecision(9, 6);
             entity.Property(x => x.Description).IsRequired(false);

@@ -20,15 +20,15 @@ public class CommunityReportRepository : ICommunityReportRepository
 
     public Task<List<CommunityReport>> GetApprovedAsync() =>
         _db.CommunityReports.AsNoTracking()
-            .Where(r => r.Status == ReportStatus.Approved.ToString())
+            .Where(r => r.Status == CommunityReportStatus.Approved)
             .ToListAsync();
 
-    public async Task UpdateStatusAsync(int reportId, ReportStatus status, int adminId)
+    public async Task UpdateStatusAsync(int reportId, CommunityReportStatus status, int adminId)
     {
         var report = await _db.CommunityReports.FindAsync(reportId)
             ?? throw new KeyNotFoundException($"Report {reportId} not found.");
 
-        report.Status = status.ToString();
+        report.Status = status;
         report.ReviewedByAdminID = adminId;
         report.ReviewedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
