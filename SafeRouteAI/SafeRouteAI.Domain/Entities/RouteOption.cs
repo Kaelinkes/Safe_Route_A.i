@@ -18,7 +18,6 @@ public class RouteOption
 
     public int Rank { get; set; }
 
-    // Navigation properties
     public Route? Route { get; set; }
 
     public ICollection<RouteOptionRoadSegment> RouteOptionRoadSegments { get; set; }

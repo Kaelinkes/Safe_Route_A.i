@@ -49,7 +49,7 @@ SafeRouteAI.Domain/
 
 The Domain entities represent the following relationships:
 
-- A User can have multiple Routes.
+- A User can have multiple Routes; a route can have no associated User for an anonymous request.
 - A Route can have multiple RouteOptions.
 - A RouteOption can contain multiple RoadSegments.
 - A RoadSegment can belong to multiple RouteOptions through RouteOptionRoadSegment.

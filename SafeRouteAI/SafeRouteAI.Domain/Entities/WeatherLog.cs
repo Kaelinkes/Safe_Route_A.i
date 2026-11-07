@@ -18,7 +18,6 @@ public class WeatherLog
 
     public double? WindSpeed { get; set; }
 
-    // Navigation property
     public ICollection<RiskAssessment> RiskAssessments { get; set; }
         = new List<RiskAssessment>();
 }

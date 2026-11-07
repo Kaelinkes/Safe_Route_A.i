@@ -1,4 +1,3 @@
-
 namespace SafeRouteAI.Domain.Entities;
 using SafeRouteAI.Domain.Enums;
 
@@ -16,7 +15,6 @@ public class RiskAssessment
 
     public AssessmentStatus AssessmentStatus { get; set; }
 
-    // Navigation properties
     public RoadSegment? RoadSegment { get; set; }
 
     public WeatherLog? WeatherLog { get; set; }
