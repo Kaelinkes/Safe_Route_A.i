@@ -1,8 +1,138 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@{
+    ViewData["Title"] = "Explore safer routes";
 }
+<section class="hero">
+    <div class="hero-copy">
+        <div class="eyebrow">● &nbsp; A SMARTER WAY TO MOVE</div>
+        <h1>
+            Your journey.
+            <br />
+            <em>With more insight.</em>
+        </h1>
+        <p class="lede">
+            Find your way across South Africa with route options that put
+            road-safety context alongside distance and travel time.
+        </p>
+        <div class="searchbox">
+            <p>Ready to plan a journey?</p>
+            <a class="btn wide" asp-controller="Routes" asp-action="Plan">
+                Open Route Planner
+                <b aria-hidden="true">→</b>
+            </a>
+            <small>Select journey points on the map to request route options.</small>
+        </div>
+        <p class="disclaimer">
+            ◇ Risk estimates are decision support, not a guarantee of road
+            conditions.
+        </p>
+    </div>
+    <div class="home-map-container">
+        <div class="map-wrap">
+            <div class="map-label">
+                <span class="map-icon">⌖</span>
+                <div>
+                    <b>South Africa</b>
+                    <small>Map view</small>
+                </div>
+                <span class="tag">OPENSTREETMAP</span>
+            </div>
+            <div id="homeMap" class="map"></div>
+            <div class="map-key">
+                <span>Route risk information will appear when available.</span>
+            </div>
+            <div class="map-card">
+                <span class="spark">✦</span>
+                <div>
+                    <b>Route information</b>
+                    <small>Available when connected services are ready</small>
+                </div>
+                <span class="push">↗</span>
+            </div>
+        </div>
+        <p class="map-attribution">
+            Map data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>
+            · Map powered by <a href="https://leafletjs.com" target="_blank" rel="noopener noreferrer">Leaflet</a>
+        </p>
+    </div>
+</section>
+<section class="benefits">
+    <article>
+        <b>01</b>
+        <div>
+            <strong>Compare your options</strong>
+            <p>See distance and estimated travel time together.</p>
+        </div>
+    </article>
+    <article>
+        <b>02</b>
+        <div>
+            <strong>Understand road risk</strong>
+            <p>Explore relative risk indicators and their context.</p>
+        </div>
+    </article>
+    <article>
+        <b>03</b>
+        <div>
+            <strong>Share what you see</strong>
+            <p>Help the community flag road incidents.</p>
+        </div>
+    </article>
+</section>
+<section class="features">
+    <div class="eyebrow">BUILT AROUND YOUR JOURNEY</div>
+    <h2>More than a line on a map.</h2>
+    <div class="feature-grid">
+        <article>
+            <span>⌖</span>
+            <h3>Routes that make sense</h3>
+            <p>
+                Compare candidate routes using estimated time, distance and
+                available safety information.
+            </p>
+        </article>
+        <article>
+            <span>◉</span>
+            <h3>Risk with context</h3>
+            <p>
+                Understand relative risk while distinguishing missing
+                information from low risk.
+            </p>
+        </article>
+        <article>
+            <span>＋</span>
+            <h3>Community awareness</h3>
+            <p>
+                Share incident information for review and community
+                awareness.
+            </p>
+        </article>
+    </div>
+</section>
+@section Styles {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+}
+@section Scripts {
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        if (!window.L) return;
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+        const m = L.map("homeMap", {
+            zoomControl: false,
+            attributionControl: false,
+            scrollWheelZoom: false,
+        }).setView([-29, 24], 5);
+
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution: "&copy; OpenStreetMap contributors",
+        }).addTo(m);
+
+        L.control
+            .zoom({
+                position: "bottomright",
+            })
+            .addTo(m);
+
+    });
+</script>
+}

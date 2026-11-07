@@ -1,0 +1,26 @@
+@{
+    ViewData["Title"] = "Compare routes";
+}
+
+<section class="page-head">
+    <div class="eyebrow">ROUTE DECISIONS</div>
+    <h1>Compare your <em>options.</em></h1>
+    <p>Compare travel time, distance and risk information side by side.</p>
+</section>
+
+<section class="content compare-page" aria-labelledby="compareTitle">
+    <div class="content-title">
+        <div>
+            <div class="eyebrow">ROUTE COMPARISON</div>
+            <h2 id="compareTitle">Route options</h2>
+            <p>Routes will appear here when routing data is available.</p>
+        </div>
+        <a class="btn outline" asp-action="Plan">← Back to route planner</a>
+    </div>
+
+    <div class="empty-state" id="comparisonEmpty" role="status">
+        <h2>Route comparison is available in the Route Planner.</h2>
+        <p>Start a route request to view calculated options and their available details.</p>
+        <a class="btn" asp-action="Plan">Open Route Planner →</a>
+    </div>
+</section>
