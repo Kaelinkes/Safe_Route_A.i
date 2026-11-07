@@ -1,4 +1,3 @@
-﻿using System.Buffers.Text;
 using System.Net.Mail;
 using System.Security.Cryptography;
 using System.Text;
@@ -19,15 +18,27 @@ public class AuthService(IUserStore store, IPasswordHasher hasher, TimeProvider 
         name = name?.Trim() ?? "";
         email = email?.Trim() ?? "";
 
-        if (name.Length is 0 or > 100) return new(false, "Name is required (max 100 characters).");
-        if (email.Length > 150 || !MailAddress.TryCreate(email, out var addr) || addr.Address != email)
-            return new(false, "Enter a valid email address.");
-        if (!IsStrong(password))
-            return new(false, "Password must be 8-128 characters with at least one letter and one digit.");
-        if (await store.FindByEmailAsync(Normalize(email)) is not null)
-            return new(false, "An account with this email already exists.");
+        if (name.Length is 0 or > 100)
+        {
+            return new(false, "Name is required (max 100 characters).");
+        }
 
-        // Role is never taken from the client: new accounts are always plain users
+        if (email.Length > 150 || !MailAddress.TryCreate(email, out var address) || address.Address != email)
+        {
+            return new(false, "Enter a valid email address.");
+        }
+
+        if (!IsStrong(password))
+        {
+            return new(false, "Password must be 8-128 characters with at least one letter and one digit.");
+        }
+
+        if (await store.FindByEmailAsync(Normalize(email)) is not null)
+        {
+            return new(false, "An account with this email already exists.");
+        }
+
+        // Role is never taken from the client: new accounts are always plain users.
         var user = new UserAccount { Name = name, Email = email, PasswordHash = hasher.Hash(password) };
         await store.AddAsync(user);
         return new(true, User: user);
@@ -38,19 +49,31 @@ public class AuthService(IUserStore store, IPasswordHasher hasher, TimeProvider 
         var now = Now;
         var user = await store.FindByEmailAsync(Normalize(email));
 
-        if (user is null) return await Fail(null, email, "UnknownUser", BadLogin, ip);
-        if (user.Status != AccountStatus.Active) return await Fail(user.UserId, email, "AccountDisabled", BadLogin, ip);
+        if (user is null)
+        {
+            return await Fail(null, email, "UnknownUser", BadLogin, ip);
+        }
+
+        if (user.Status != AccountStatus.Active)
+        {
+            return await Fail(user.UserId, email, "AccountDisabled", BadLogin, ip);
+        }
+
         if (user.LockedUntil > now)
+        {
             return await Fail(user.UserId, email, "Locked", "Account temporarily locked. Try again later.", ip);
+        }
 
         if (!hasher.Verify(password ?? "", user.PasswordHash))
         {
             user.FailedLogins++;
+
             if (user.FailedLogins >= MaxFailedLogins)
             {
                 user.LockedUntil = now + LockDuration;
                 user.FailedLogins = 0;
             }
+
             await store.UpdateAsync(user);
             return await Fail(user.UserId, email, "BadPassword", BadLogin, ip);
         }
@@ -60,19 +83,31 @@ public class AuthService(IUserStore store, IPasswordHasher hasher, TimeProvider 
         user.LastLoginAt = now;
         await store.UpdateAsync(user);
 
-        // The raw token goes to the client; only its hash is stored
-        var token = Base64Url.EncodeToString(RandomNumberGenerator.GetBytes(32));
+        // The raw token goes to the client; only its hash is stored.
+        var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))
+            .TrimEnd('=')
+            .Replace('+', '-')
+            .Replace('/', '_');
+
         await store.AddSessionAsync(user.UserId, HashToken(token), now + SessionLifetime);
+
         await store.LogAttemptAsync(user.UserId, email, true, null, ip);
         return new(true, User: user, Token: token);
     }
 
     public async Task<UserAccount?> ValidateSessionAsync(string? token)
     {
-        if (string.IsNullOrEmpty(token)) return null;
+        if (string.IsNullOrEmpty(token))
+        {
+            return null;
+        }
 
         var session = await store.FindSessionAsync(HashToken(token));
-        if (session is null || session.RevokedAt is not null || session.ExpiresAt <= Now) return null;
+
+        if (session is null || session.RevokedAt is not null || session.ExpiresAt <= Now)
+        {
+            return null;
+        }
 
         var user = await store.FindByIdAsync(session.UserId);
         return user is { Status: AccountStatus.Active } ? user : null;
@@ -80,14 +115,21 @@ public class AuthService(IUserStore store, IPasswordHasher hasher, TimeProvider 
 
     public Task LogoutAsync(string token) => store.RevokeSessionAsync(HashToken(token));
 
-    private async Task<AuthResult> Fail(int? userId, string email, string reason, string message, string? ip)
+    private async Task<AuthResult> Fail(
+        int? userId,
+        string email,
+        string reason,
+        string message,
+        string? ip)
     {
         await store.LogAttemptAsync(userId, email, false, reason, ip);
         return new(false, message);
     }
 
-    private static bool IsStrong(string? p) =>
-        p is { Length: >= 8 and <= 128 } && p.Any(char.IsLetter) && p.Any(char.IsDigit);
+    private static bool IsStrong(string? password) =>
+        password is { Length: >= 8 and <= 128 } &&
+        password.Any(char.IsLetter) &&
+        password.Any(char.IsDigit);
 
     private static string Normalize(string? email) => (email ?? "").Trim().ToLowerInvariant();
 

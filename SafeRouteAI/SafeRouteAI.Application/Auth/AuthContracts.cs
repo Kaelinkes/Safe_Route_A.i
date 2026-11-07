@@ -1,7 +1,15 @@
-﻿namespace SafeRouteAI.Application.Auth;
+namespace SafeRouteAI.Application.Auth;
 
-public static class Roles { public const string User = "User", Admin = "Admin"; }
-public static class AccountStatus { public const string Active = "Active"; }
+public static class Roles
+{
+    public const string User = "User";
+    public const string Admin = "Admin";
+}
+
+public static class AccountStatus
+{
+    public const string Active = "Active";
+}
 
 public class UserAccount
 {
@@ -18,7 +26,11 @@ public class UserAccount
 
 public record SessionInfo(int UserId, DateTime ExpiresAt, DateTime? RevokedAt);
 
-public record AuthResult(bool Success, string? Error = null, UserAccount? User = null, string? Token = null);
+public record AuthResult(
+    bool Success,
+    string? Error = null,
+    UserAccount? User = null,
+    string? Token = null);
 
 public interface IPasswordHasher
 {

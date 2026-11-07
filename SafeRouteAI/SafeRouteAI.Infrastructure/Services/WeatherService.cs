@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Text.Json;
 using SafeRouteAI.Application.DTOs;
 using SafeRouteAI.Application.Interfaces;
@@ -6,40 +6,71 @@ using SafeRouteAI.Application.Validation;
 
 namespace SafeRouteAI.Infrastructure.Services;
 
-public class WeatherService : IWeatherService
+public class WeatherService(HttpClient http) : IWeatherService
 {
-    private static readonly WeatherResult Unavailable = new(false, 0, 0, 0, 0, 0, "Unknown");
-    private readonly HttpClient _http;
+    private static readonly WeatherResult Unavailable =
+        new(false, 0, 0, 0, 0, 0, "Unknown");
 
-    public WeatherService(HttpClient http) => _http = http;
-
-    public async Task<WeatherResult> GetWeatherAsync(Coordinate location, DateTime time)
+    public async Task<WeatherResult> GetWeatherAsync(
+        Coordinate location,
+        DateTime time)
     {
-        if (!Validators.IsValid(location)) return Unavailable;
+        if (!Validators.IsValid(location))
+            return Unavailable;
+
+        var hour = time.ToUniversalTime()
+            .ToString("yyyy-MM-dd'T'HH':00'", CultureInfo.InvariantCulture);
+
+        var url = string.Create(
+            CultureInfo.InvariantCulture,
+            $"https://api.open-meteo.com/v1/forecast?latitude={location.Lat}&longitude={location.Lon}&hourly=precipitation,visibility,wind_speed_10m,temperature_2m,relative_humidity_2m,weather_code&start_hour={hour}&end_hour={hour}");
 
         try
         {
-            var hour = time.ToUniversalTime().ToString("yyyy-MM-dd'T'HH':00'");
-            var url = string.Create(CultureInfo.InvariantCulture,
-                $"https://api.open-meteo.com/v1/forecast?latitude={location.Lat}&longitude={location.Lon}&hourly=precipitation,visibility,wind_speed_10m,temperature_2m,relative_humidity_2m,weather_code&start_hour={hour}&end_hour={hour}");
+            using var document =
+                await JsonDocument.ParseAsync(await http.GetStreamAsync(url));
 
-            using var doc = await JsonDocument.ParseAsync(await _http.GetStreamAsync(url));
-            var hourly = doc.RootElement.GetProperty("hourly");
+            var hourly = document.RootElement.GetProperty("hourly");
 
-            var rain = First(hourly, "precipitation");
-            var vis = First(hourly, "visibility");
-            var wind = First(hourly, "wind_speed_10m");
-            var temp = First(hourly, "temperature_2m");
+            var precipitation = First(hourly, "precipitation");
+            var visibility = First(hourly, "visibility");
+            var windSpeed = First(hourly, "wind_speed_10m");
+            var temperature = First(hourly, "temperature_2m");
             var humidity = First(hourly, "relative_humidity_2m");
-            var code = First(hourly, "weather_code");
+            var weatherCode = First(hourly, "weather_code");
 
-            if (rain is null || vis is null || wind is null || temp is null || humidity is null || code is null)
+            if (precipitation is null ||
+                visibility is null ||
+                windSpeed is null ||
+                temperature is null ||
+                humidity is null ||
+                weatherCode is null)
+            {
                 return Unavailable;
+            }
 
-            return new WeatherResult(true, rain.Value, vis.Value, wind.Value,
-                temp.Value, humidity.Value, ToCondition((int)code.Value));
+            return new WeatherResult(
+                true,
+                precipitation.Value,
+                visibility.Value,
+                windSpeed.Value,
+                temperature.Value,
+                humidity.Value,
+                ToCondition((int)weatherCode.Value));
         }
-        catch
+        catch (HttpRequestException)
+        {
+            return Unavailable;
+        }
+        catch (JsonException)
+        {
+            return Unavailable;
+        }
+        catch (KeyNotFoundException)
+        {
+            return Unavailable;
+        }
+        catch (IndexOutOfRangeException)
         {
             return Unavailable;
         }
@@ -47,11 +78,18 @@ public class WeatherService : IWeatherService
 
     private static double? First(JsonElement hourly, string name)
     {
-        var value = hourly.GetProperty(name)[0];
-        return value.ValueKind == JsonValueKind.Number ? value.GetDouble() : null;
+        var values = hourly.GetProperty(name);
+
+        if (values.GetArrayLength() == 0)
+            return null;
+
+        var value = values[0];
+
+        return value.ValueKind == JsonValueKind.Number
+            ? value.GetDouble()
+            : null;
     }
 
-    // WMO weather codes used by Open-Meteo
     private static string ToCondition(int code) => code switch
     {
         0 => "Clear",
