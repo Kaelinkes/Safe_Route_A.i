@@ -1,5 +1,6 @@
-namespace SafeRouteAI.Domain.Entities;
 using SafeRouteAI.Domain.Enums;
+
+namespace SafeRouteAI.Domain.Entities;
 
 public class RiskAssessment
 {

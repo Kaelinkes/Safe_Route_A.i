@@ -40,3 +40,10 @@ public class CommunityReportDto
     public int? ReviewedByAdminId { get; set; }
     public DateTime? ReviewedAt { get; set; }
 }
+
+public record RouteLogEntry(
+    int? UserId,
+    Coordinate Origin,
+    Coordinate Destination,
+    DateTime RequestedAt,
+    List<RankedRouteDto> Routes);

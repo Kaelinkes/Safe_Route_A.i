@@ -14,14 +14,16 @@ public class RouteComparisonService(
         Coordinate destination,
         CancellationToken cancellationToken = default)
     {
-        var routeOptions = await routes.GetRoutesAsync(start, destination, cancellationToken);
+        var routeOptions = await routes.GetRoutesAsync(
+            start, destination, cancellationToken);
+
         if (routeOptions.Count == 0)
-        {
             return [];
-        }
 
         var weatherResult = await weather.GetWeatherAsync(start, DateTime.UtcNow);
+
         var assessments = new List<(RouteOptionDto Route, RiskAssessmentDto Risk)>();
+
         foreach (var route in routeOptions)
         {
             assessments.Add((
@@ -37,9 +39,7 @@ public class RouteComparisonService(
         WeatherResult weather)
     {
         if (items.Count == 0)
-        {
             return [];
-        }
 
         var maxTime = Math.Max(items.Max(item => item.Route.DurationMinutes), 1);
         var adverseWeather = IsAdverse(weather);
@@ -62,5 +62,7 @@ public class RouteComparisonService(
 
     private static bool IsAdverse(WeatherResult weather) =>
         weather.IsAvailable &&
-        (weather.Precipitation > 2 || weather.Visibility < 1000 || weather.WindSpeed > 40);
+        (weather.Precipitation > 2 ||
+         weather.Visibility < 1000 ||
+         weather.WindSpeed > 40);
 }

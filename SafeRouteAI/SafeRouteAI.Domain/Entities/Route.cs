@@ -1,4 +1,3 @@
-
 namespace SafeRouteAI.Domain.Entities;
 
 public class Route
@@ -9,7 +8,9 @@ public class Route
     public int? UserID { get; set; }
 
     public string Origin { get; set; } = string.Empty;
+
     public string Destination { get; set; } = string.Empty;
+
     public DateTime RequestDateTime { get; set; }
 
     // Navigation property to the associated user, if registered.

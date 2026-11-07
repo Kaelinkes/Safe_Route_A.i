@@ -19,40 +19,42 @@ public class CommunityReportRepository(AppDbContext db) : ICommunityReportReposi
             IncidentType = r.IncidentType,
             Description = r.Description,
             ReportDateTime = r.ReportedAt,
-            Status = r.Status.ToString()
+            Status = CommunityReportStatus.Pending
         };
+
         db.Set<CommunityReport>().Add(entity);
         await db.SaveChangesAsync();
+
         r.ReportId = entity.ReportID;
     }
 
-    public Task<List<CommunityReport>> GetApprovedAsync() =>
-        _db.CommunityReports.AsNoTracking()
-            .Where(r => r.Status == CommunityReportStatus.Approved)
-            .ToListAsync();
-    public Task<List<CommunityReportDto>> GetPendingAsync() => GetByStatus(ReportStatus.Pending);
-    public Task<List<CommunityReportDto>> GetApprovedAsync() => GetByStatus(ReportStatus.Approved);
+    public Task<List<CommunityReportDto>> GetPendingAsync() =>
+        GetByStatus(ReportStatus.Pending);
 
-    public async Task UpdateStatusAsync(int reportId, CommunityReportStatus status, int adminId)
+    public Task<List<CommunityReportDto>> GetApprovedAsync() =>
+        GetByStatus(ReportStatus.Approved);
+
+    public async Task UpdateStatusAsync(int reportId, ReportStatus status, int adminId)
     {
         var entity = await db.Set<CommunityReport>().FindAsync(reportId)
             ?? throw new KeyNotFoundException($"Report {reportId} not found.");
 
-        report.Status = status;
-        report.ReviewedByAdminID = adminId;
-        report.ReviewedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
-        entity.Status = status.ToString();
+        entity.Status = Enum.Parse<CommunityReportStatus>(status.ToString());
         entity.ReviewedByAdminID = adminId;
         entity.ReviewedAt = DateTime.UtcNow;
+
         await db.SaveChangesAsync();
     }
 
     private async Task<List<CommunityReportDto>> GetByStatus(ReportStatus status)
     {
-        var name = status.ToString();
-        var rows = await db.Set<CommunityReport>().AsNoTracking()
-            .Where(r => r.Status == name).ToListAsync();
+        var entityStatus = Enum.Parse<CommunityReportStatus>(status.ToString());
+
+        var rows = await db.Set<CommunityReport>()
+            .AsNoTracking()
+            .Where(r => r.Status == entityStatus)
+            .ToListAsync();
+
         return rows.Select(ToDto).ToList();
     }
 
@@ -65,7 +67,7 @@ public class CommunityReportRepository(AppDbContext db) : ICommunityReportReposi
         IncidentType = e.IncidentType,
         Description = e.Description,
         ReportedAt = e.ReportDateTime,
-        Status = Enum.TryParse<ReportStatus>(e.Status, true, out var s) ? s : ReportStatus.Pending,
+        Status = Enum.Parse<ReportStatus>(e.Status.ToString()),
         ReviewedByAdminId = e.ReviewedByAdminID,
         ReviewedAt = e.ReviewedAt
     };

@@ -38,6 +38,7 @@ public class AuthService(IUserStore store, IPasswordHasher hasher, TimeProvider 
             return new(false, "An account with this email already exists.");
         }
 
+        // Role is never taken from the client: new accounts are always plain users.
         var user = new UserAccount { Name = name, Email = email, PasswordHash = hasher.Hash(password) };
         await store.AddAsync(user);
         return new(true, User: user);
@@ -45,6 +46,7 @@ public class AuthService(IUserStore store, IPasswordHasher hasher, TimeProvider 
 
     public async Task<AuthResult> LoginAsync(string email, string password, string? ip = null)
     {
+        var now = Now;
         var user = await store.FindByEmailAsync(Normalize(email));
 
         if (user is null)
@@ -57,7 +59,7 @@ public class AuthService(IUserStore store, IPasswordHasher hasher, TimeProvider 
             return await Fail(user.UserId, email, "AccountDisabled", BadLogin, ip);
         }
 
-        if (user.LockedUntil > Now)
+        if (user.LockedUntil > now)
         {
             return await Fail(user.UserId, email, "Locked", "Account temporarily locked. Try again later.", ip);
         }
@@ -65,9 +67,10 @@ public class AuthService(IUserStore store, IPasswordHasher hasher, TimeProvider 
         if (!hasher.Verify(password ?? "", user.PasswordHash))
         {
             user.FailedLogins++;
+
             if (user.FailedLogins >= MaxFailedLogins)
             {
-                user.LockedUntil = Now + LockDuration;
+                user.LockedUntil = now + LockDuration;
                 user.FailedLogins = 0;
             }
 
@@ -77,14 +80,17 @@ public class AuthService(IUserStore store, IPasswordHasher hasher, TimeProvider 
 
         user.FailedLogins = 0;
         user.LockedUntil = null;
-        user.LastLoginAt = Now;
+        user.LastLoginAt = now;
         await store.UpdateAsync(user);
 
+        // The raw token goes to the client; only its hash is stored.
         var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))
             .TrimEnd('=')
             .Replace('+', '-')
             .Replace('/', '_');
-        await store.AddSessionAsync(user.UserId, HashToken(token), Now + SessionLifetime);
+
+        await store.AddSessionAsync(user.UserId, HashToken(token), now + SessionLifetime);
+
         await store.LogAttemptAsync(user.UserId, email, true, null, ip);
         return new(true, User: user, Token: token);
     }
@@ -97,6 +103,7 @@ public class AuthService(IUserStore store, IPasswordHasher hasher, TimeProvider 
         }
 
         var session = await store.FindSessionAsync(HashToken(token));
+
         if (session is null || session.RevokedAt is not null || session.ExpiresAt <= Now)
         {
             return null;

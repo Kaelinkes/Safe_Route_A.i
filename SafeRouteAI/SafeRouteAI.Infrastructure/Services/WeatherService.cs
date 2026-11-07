@@ -8,24 +8,30 @@ namespace SafeRouteAI.Infrastructure.Services;
 
 public class WeatherService(HttpClient http) : IWeatherService
 {
-    private static readonly WeatherResult Unavailable = new(false, 0, 0, 0, 0, 0, "Unknown");
+    private static readonly WeatherResult Unavailable =
+        new(false, 0, 0, 0, 0, 0, "Unknown");
 
-    public async Task<WeatherResult> GetWeatherAsync(Coordinate location, DateTime time)
+    public async Task<WeatherResult> GetWeatherAsync(
+        Coordinate location,
+        DateTime time)
     {
         if (!Validators.IsValid(location))
-        {
             return Unavailable;
-        }
 
-        var hour = time.ToUniversalTime().ToString("yyyy-MM-dd'T'HH':00'", CultureInfo.InvariantCulture);
+        var hour = time.ToUniversalTime()
+            .ToString("yyyy-MM-dd'T'HH':00'", CultureInfo.InvariantCulture);
+
         var url = string.Create(
             CultureInfo.InvariantCulture,
             $"https://api.open-meteo.com/v1/forecast?latitude={location.Lat}&longitude={location.Lon}&hourly=precipitation,visibility,wind_speed_10m,temperature_2m,relative_humidity_2m,weather_code&start_hour={hour}&end_hour={hour}");
 
         try
         {
-            using var document = await JsonDocument.ParseAsync(await http.GetStreamAsync(url));
+            using var document =
+                await JsonDocument.ParseAsync(await http.GetStreamAsync(url));
+
             var hourly = document.RootElement.GetProperty("hourly");
+
             var precipitation = First(hourly, "precipitation");
             var visibility = First(hourly, "visibility");
             var windSpeed = First(hourly, "wind_speed_10m");
@@ -73,13 +79,15 @@ public class WeatherService(HttpClient http) : IWeatherService
     private static double? First(JsonElement hourly, string name)
     {
         var values = hourly.GetProperty(name);
+
         if (values.GetArrayLength() == 0)
-        {
             return null;
-        }
 
         var value = values[0];
-        return value.ValueKind == JsonValueKind.Number ? value.GetDouble() : null;
+
+        return value.ValueKind == JsonValueKind.Number
+            ? value.GetDouble()
+            : null;
     }
 
     private static string ToCondition(int code) => code switch

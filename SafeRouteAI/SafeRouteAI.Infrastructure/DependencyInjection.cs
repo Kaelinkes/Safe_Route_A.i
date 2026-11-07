@@ -1,4 +1,3 @@
-
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,58 +11,43 @@ namespace SafeRouteAI.Infrastructure;
 
 public static class DependencyInjection
 {
+    private const string FallbackConnection =
+        "Server=(localdb)\\MSSQLLocalDB;Database=SafeRouteAI;Trusted_Connection=True;TrustServerCertificate=True";
+
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services)
     {
-        // Weather provider HTTP client.
         services.AddHttpClient<IWeatherService, WeatherService>(
-            client =>
-            {
-                client.Timeout = TimeSpan.FromSeconds(10);
-            });
+            client => client.Timeout = TimeSpan.FromSeconds(10));
 
-        // Real routing provider HTTP client.
         services.AddHttpClient<IRouteService, RouteService>(
-            client =>
-            {
-                client.Timeout = TimeSpan.FromSeconds(30);
-            });
+            client => client.Timeout = TimeSpan.FromSeconds(30));
 
-        // Backend risk service.
-        // FakeRiskService remains active until real ML integration.
         services.AddScoped<IRiskService, FakeRiskService>();
-
-        // Backend route comparison service.
         services.AddScoped<RouteComparisonService>();
 
-        // SQL Server database context.
         services.AddDbContext<AppDbContext>((sp, options) =>
         {
-            var connectionString = sp
-                .GetService<IConfiguration>()?
-                .GetConnectionString("DefaultConnection")
-                ?? AppDbContext.DefaultConnection;
+            var configuration = sp.GetService<IConfiguration>();
+
+            var connectionString =
+                configuration?.GetConnectionString("DefaultConnection")
+                ?? FallbackConnection;
 
             options.UseSqlServer(
                 connectionString,
                 sql => sql.EnableRetryOnFailure());
         });
 
-        // Authentication services.
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<IPasswordHasher, Pbkdf2PasswordHasher>();
         services.AddSingleton<AuthMemoryState>();
         services.AddScoped<IUserStore, UserStore>();
         services.AddScoped<AuthService>();
 
-        // Community report services.
-        services.AddScoped<
-            ICommunityReportRepository,
-            CommunityReportRepository>();
-
+        services.AddScoped<ICommunityReportRepository, CommunityReportRepository>();
         services.AddScoped<CommunityReportService>();
 
-        // Route logging repository.
         services.AddScoped<IRouteLogRepository, RouteLogRepository>();
 
         return services;

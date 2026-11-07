@@ -48,7 +48,17 @@ public class FakeRiskService : IRiskService
         }
 
         score = Math.Min(score, 1);
-        var level = score < 0.4 ? RiskLevel.Low : score < 0.7 ? RiskLevel.Medium : RiskLevel.High;
-        return Task.FromResult(new RiskAssessmentDto(AssessmentStatus.Valid, score, level, factors));
+
+        var level = score < 0.4
+            ? RiskLevel.Low
+            : score < 0.7
+                ? RiskLevel.Medium
+                : RiskLevel.High;
+
+        return Task.FromResult(new RiskAssessmentDto(
+            AssessmentStatus.Valid,
+            score,
+            level,
+            factors));
     }
 }
