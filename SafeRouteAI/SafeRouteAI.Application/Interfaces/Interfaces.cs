@@ -22,6 +22,9 @@ public interface IRiskService
 
 public interface ICommunityReportRepository
 {
+    Task AddAsync(CommunityReport report);
+    Task<List<CommunityReport>> GetApprovedAsync();
+    Task UpdateStatusAsync(int reportId, CommunityReportStatus status, int adminId);
     Task AddAsync(CommunityReportDto report);
     Task<List<CommunityReportDto>> GetPendingAsync();
     Task<List<CommunityReportDto>> GetApprovedAsync();

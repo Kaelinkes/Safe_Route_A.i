@@ -26,14 +26,22 @@ public class CommunityReportRepository(AppDbContext db) : ICommunityReportReposi
         r.ReportId = entity.ReportID;
     }
 
+    public Task<List<CommunityReport>> GetApprovedAsync() =>
+        _db.CommunityReports.AsNoTracking()
+            .Where(r => r.Status == CommunityReportStatus.Approved)
+            .ToListAsync();
     public Task<List<CommunityReportDto>> GetPendingAsync() => GetByStatus(ReportStatus.Pending);
     public Task<List<CommunityReportDto>> GetApprovedAsync() => GetByStatus(ReportStatus.Approved);
 
-    public async Task UpdateStatusAsync(int reportId, ReportStatus status, int adminId)
+    public async Task UpdateStatusAsync(int reportId, CommunityReportStatus status, int adminId)
     {
         var entity = await db.Set<CommunityReport>().FindAsync(reportId)
             ?? throw new KeyNotFoundException($"Report {reportId} not found.");
 
+        report.Status = status;
+        report.ReviewedByAdminID = adminId;
+        report.ReviewedAt = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
         entity.Status = status.ToString();
         entity.ReviewedByAdminID = adminId;
         entity.ReviewedAt = DateTime.UtcNow;

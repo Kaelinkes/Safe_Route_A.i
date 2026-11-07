@@ -1,3 +1,5 @@
+using SafeRouteAI.Domain.Enums;
+
 namespace SafeRouteAI.Domain.Entities;
 
 public class CommunityReport
@@ -16,7 +18,7 @@ public class CommunityReport
 
     public DateTime ReportDateTime { get; set; }
 
-    public string Status { get; set; } = "Pending";
+    public CommunityReportStatus Status { get; set; } = CommunityReportStatus.Pending;
 
     public int? ReviewedByAdminID { get; set; }
 

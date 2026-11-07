@@ -11,6 +11,14 @@ public class CommunityReportService(ICommunityReportRepository repo)
     {
         if (!Validators.IsValid(report)) return false;
 
+        report.Status = CommunityReportStatus.Pending;
+        report.ReportDateTime = DateTime.UtcNow;
+        await _repo.AddAsync(report);
+        return true;
+    }
+
+    public Task ModerateAsync(int reportId, CommunityReportStatus status, int adminId) =>
+        _repo.UpdateStatusAsync(reportId, status, adminId);
         report.Status = ReportStatus.Pending;
         report.ReportedAt = DateTime.UtcNow;
         await repo.AddAsync(report);
