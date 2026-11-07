@@ -1,140 +1,85 @@
-\# SafeRoute AI – API Integration
+SafeRoute AI - API Integration
 
+Overview
 
+SafeRoute AI is a road safety application designed to help users compare routes based on travel information and potential safety risks.
 
-\## Overview
+The API integration layer connects the frontend application to backend services, the database, external services, and the risk prediction component.
 
-The API Integration Layer connects the SafeRoute AI Frontend with the Backend services, database functionality, and Machine Learning model.
+ API Features
 
+ Authentication and Authorization
+- User registration and login.
+- Bearer token authentication.
+- Role-based access control.
+- Protected endpoints for authorized users and administrators.
 
+ Route Comparison
+- Accepts origin and destination coordinates.
+- Integrates with routing services to retrieve route information.
+- Provides route comparison data to the frontend.
+- Supports risk information associated with routes.
 
-My responsibility was to develop and test the API endpoints that allow the different components to communicate.
+ Risk Prediction
+- Provides an endpoint for road risk predictions.
+- Defines request and response contracts for the prediction service.
+- Supports integration with the Python machine learning model.
+- Uses a mock prediction service while final ML integration is pending.
 
+ Community Reports
+- Allows authenticated users to submit road safety reports.
+- Supports administrator review and moderation.
+- Makes approved reports available through the API.
+- Restricts administrative actions to authorized users.
 
+ Weather Integration
+- Provides weather-related information through the API.
+- Supports the use of weather conditions in road safety features.
 
-\## Technologies
+ Input Validation and Error Handling
+- Validates incoming API requests.
+- Rejects invalid or incomplete inputs.
+- Returns appropriate HTTP status codes and error responses.
 
-\- C# / ASP.NET Core Web API
+ Main API Endpoints
 
-\- .NET 10
+- `GET /api/v1/health` — Check API availability.
+- `POST /api/v1/risk/predict` — Request a risk prediction.
+- `POST /api/v1/routes/compare` — Compare routes.
 
-\- REST API and JSON
+Additional endpoints support authentication, community reports, weather information, and administration.
 
-\- Bearer Token Authentication
+ Technologies
 
-\- xUnit Testing
+- ASP.NET Core Web API
+- C# and .NET 10
+- SQL Server
+- Entity Framework Core
+- REST API
+- OpenAPI
+- xUnit
 
-\- GitHub
-
-
-
-\## Implemented Features
-
-\- User registration and login
-
-\- Authentication and role-based authorization
-
-\- Route comparison API
-
-\- Risk prediction API contract
-
-\- Weather API
-
-\- Community incident reporting
-
-\- Admin report approval and rejection
-
-\- Input validation and error handling
-
-\- API integration and automated testing
-
-
-
-\## Main API Endpoints
-
-
-
-| Method | Endpoint | Purpose |
-
-|---|---|---|
-
-| GET | `/api/v1/health` | Check API status |
-
-| POST | `/api/v1/auth/register` | Register user |
-
-| POST | `/api/v1/auth/login` | User login |
-
-| POST | `/api/v1/routes/compare` | Compare routes |
-
-| POST | `/api/v1/risk/predict` | Request risk prediction |
-
-| GET | `/api/v1/weather` | Get weather information |
-
-| POST | `/api/v1/reports` | Submit incident report |
-
-| GET | `/api/v1/reports` | View approved reports |
-
-| GET | `/api/v1/admin/reports/pending` | View pending reports |
-
-| PATCH | `/api/v1/admin/reports/{id}/status` | Approve or reject reports |
-
-
-
-\## Testing
-
-The API was tested using automated tests and CMD requests.
-
-
-
-\*\*Latest solution test results:\*\*
-
-\- 71 total tests
-
-\- 70 passed
-
-\- 0 failed
-
-\- 1 skipped
-
-\- Build successful
-
-
-
-Authentication, Community Reports, and admin authorization were successfully tested against the database.
-
-
-
-\## Running the API
-
-
+ Running the API
 
 From the solution directory:
 
-
-
-```bash
-
-dotnet run --project SafeRouteAI.API
-
+```cmd
+dotnet restore
+dotnet build SafeRouteAI.slnx
+dotnet run --project SafeRouteAI.API --urls http://localhost:5080
 ```
 
+The API runs at:
 
+`http://localhost:5080`
 
-\## Current Status
+Database connectivity, connection strings, and any required external service credentials must be configured for the relevant features to work.
 
-The API integration for the completed features has been implemented and tested.
+## Testing
 
+Run the automated tests:
 
-
-\*\*Outstanding:\*\* Connecting the final Python ML model for real risk predictions and completing final end-to-end verification.
-
-
-
-\## My Contribution
-
-My work focused specifically on the \*\*API Integration Layer\*\*, including endpoints, DTOs, validation, authentication integration, service connections, and API testing.
-
-
-
-The Frontend, Backend business logic, Domain Layer, Database implementation, and Python ML model were handled by other team members.
+```cmd
+dotnet test SafeRouteAI.slnx
+```
 
