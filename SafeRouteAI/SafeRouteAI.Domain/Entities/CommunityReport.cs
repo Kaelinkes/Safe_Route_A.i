@@ -1,6 +1,7 @@
 using SafeRouteAI.Domain.Enums;
 
 namespace SafeRouteAI.Domain.Entities;
+using SafeRouteAI.Domain.Enums;
 
 public class CommunityReport
 {
