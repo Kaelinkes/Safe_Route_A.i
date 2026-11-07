@@ -1,0 +1,298 @@
+@{
+    ViewData["Title"] = "Report an incident";
+}
+<section class="page-head">
+    <div class="eyebrow">COMMUNITY ROAD AWARENESS</div>
+    <h1>
+        See something?
+        <em>Share it.</em>
+    </h1>
+    <p>
+        Report a road incident to help build a clearer picture of
+        conditions affecting journeys in your area.
+    </p>
+</section>
+<section class="two-col report-layout">
+    <div class="content">
+        <div class="eyebrow">NEW REPORT</div>
+        <h2>Incident details</h2>
+        <form id="incidentForm" method="post" novalidate>
+            <label for="incidentType">
+                Incident type
+                <span class="required-mark">*</span>
+            </label>
+            <select
+                id="incidentType"
+                required
+                aria-describedby="incidentTypeError"
+            >
+                <option value="">Choose an incident type</option>
+                <option>Accident or collision</option>
+                <option>Stalled vehicle</option>
+                <option>Pothole</option>
+                <option>Flooding</option>
+                <option>Damaged road infrastructure</option>
+                <option>Broken streetlight</option>
+                <option>Dangerous pedestrian crossing</option>
+                <option>Other</option>
+            </select>
+            <p
+                class="inline-error"
+                id="incidentTypeError"
+                role="alert"
+                hidden
+            ></p>
+            <label for="incidentLocation">
+                Location
+                <span class="required-mark">*</span>
+            </label>
+            <input
+                id="incidentLocation"
+                required
+                readonly
+                placeholder="Choose a point on the map"
+                aria-describedby="incidentLocationHint incidentLocationError"
+            />
+            <small id="incidentLocationHint">
+                Map selection records coordinates in this form only. No report is submitted or saved.
+            </small>
+            <p
+                class="inline-error"
+                id="incidentLocationError"
+                role="alert"
+                hidden
+            ></p>
+            <div class="report-location-actions">
+                <button
+                    class="btn outline"
+                    type="button"
+                    id="chooseReportMapPoint"
+                >
+                    Choose point on map
+                </button>
+            </div>
+            <div
+                id="incidentMap"
+                class="incident-map"
+                role="region"
+                aria-label="Incident location map"
+            ></div>
+            <label for="incidentDescription">
+                Description
+                <span class="optional-label">Optional</span>
+            </label>
+            <textarea
+                id="incidentDescription"
+                maxlength="500"
+                rows="4"
+                placeholder="Describe what you observed. Avoid personal details."
+            ></textarea>
+            <div class="character-count">
+                <span>Maximum 500 characters</span>
+                <output id="descriptionCount" for="incidentDescription">
+                    0/500
+                </output>
+            </div>
+            <label for="observedWhen">When did you observe it?</label>
+            <select id="observedWhen">
+                <option>Just now</option>
+                <option>Within the last hour</option>
+                <option>Earlier today</option>
+                <option>Yesterday</option>
+            </select>
+            <label class="check">
+                <input
+                    id="reportAccurate"
+                    type="checkbox"
+                    required
+                    aria-describedby="reportAccurateError"
+                />
+                I confirm this report is accurate to the best of my
+                knowledge.
+            </label>
+            <p
+                class="inline-error"
+                id="reportAccurateError"
+                role="alert"
+                hidden
+            ></p>
+            <p
+                id="incidentMessage"
+                class="route-message"
+                role="status"
+                aria-live="polite"
+                hidden
+            ></p>
+            <div class="report-form-actions">
+                <button class="btn" id="submitIncident" type="submit">
+                    Submit report →
+                </button>
+                <button
+                    class="btn outline"
+                    id="cancelIncident"
+                    type="button"
+                >
+                    Cancel
+                </button>
+            </div>
+            <small>
+                Report submission is unavailable until a reporting service is connected.
+            </small>
+        </form>
+    </div>
+    <aside class="side-note">
+        <span class="big-plus" aria-hidden="true">＋</span>
+        <div class="eyebrow">REPORT RESPONSIBLY</div>
+        <h2>Your safety comes first.</h2>
+        <p>
+            Only submit when it is safe. Never use the form while driving.
+            Reports should be reviewed before being treated as verified
+            information.
+        </p>
+        <hr />
+        <b>✓ &nbsp; Review required</b>
+        <small>Reports must be reviewed before being treated as verified information.</small>
+        <b>✓ &nbsp; Location matters</b>
+            <small>Choose a point on the map to enter coordinates.</small>
+    </aside>
+</section>
+@section Styles {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+}
+@section Scripts {
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const form = document.getElementById("incidentForm"),
+            locationField = document.getElementById("incidentLocation"),
+            mapNode = document.getElementById("incidentMap"),
+            type = document.getElementById("incidentType"),
+            accurate = document.getElementById("reportAccurate"),
+            typeError = document.getElementById("incidentTypeError"),
+            locationError = document.getElementById("incidentLocationError"),
+            accurateError = document.getElementById("reportAccurateError");
+        let map = null,
+            marker = null,
+            picking = false;
+        const message = document.getElementById("incidentMessage");
+        function show(text, type) {
+            message.textContent = text;
+            message.className = `route-message ${type}`;
+            message.hidden = false;
+        }
+        function setPoint(latlng, label) {
+            locationField.value = `${label} (${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)})`;
+            setInlineError(
+                locationField,
+                document.getElementById("incidentLocationError"),
+                "",
+            );
+            if (marker) marker.remove();
+            if (map) marker = L.marker(latlng).addTo(map);
+        }
+        if (window.L) {
+            map = L.map("incidentMap", {
+                zoomControl: false,
+            }).setView([-29, 24], 5);
+            L.tileLayer(
+                "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {
+                    attribution: "&copy; OpenStreetMap contributors",
+                },
+            ).addTo(map);
+            L.control.zoom({ position: "topright" }).addTo(map);
+            map.on("click", (event) => {
+                if (!picking) return;
+                setPoint(event.latlng, "Map coordinates");
+                picking = false;
+                show(
+                    "Map coordinates selected. No place lookup was performed.",
+                    "info",
+                );
+            });
+        }
+        document
+            .getElementById("chooseReportMapPoint")
+            .addEventListener("click", () => {
+                picking = true;
+                show(
+                    "Click the map to choose report coordinates.",
+                    "info",
+                );
+                mapNode.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center",
+                });
+            });
+        document
+            .getElementById("incidentDescription")
+            .addEventListener(
+                "input",
+                (event) =>
+                    (document.getElementById("descriptionCount").value =
+                        `${event.target.value.length}/500`),
+            );
+        form.addEventListener("submit", (event) => {
+            event.preventDefault();
+            const type = document.getElementById("incidentType"),
+                accurate = document.getElementById("reportAccurate");
+            const typeError = document.getElementById("incidentTypeError"),
+                locationError = document.getElementById(
+                    "incidentLocationError",
+                ),
+                accurateError = document.getElementById(
+                    "reportAccurateError",
+                );
+            setInlineError(type, typeError, "");
+            setInlineError(locationField, locationError, "");
+            setInlineError(accurate, accurateError, "");
+            if (!type.value) {
+                setInlineError(
+                    type,
+                    typeError,
+                    "Please select an incident type.",
+                );
+                type.focus();
+                return;
+            }
+            if (!locationField.value) {
+                setInlineError(
+                    locationField,
+                    locationError,
+                    "Please choose a location on the map.",
+                );
+                locationField.focus();
+                return;
+            }
+            if (!accurate.checked) {
+                setInlineError(
+                    accurate,
+                    accurateError,
+                    "Please confirm that the report is accurate to the best of your knowledge.",
+                );
+                accurate.focus();
+                return;
+            }
+            show("Report submission is unavailable because reporting integration is not connected. Your report was not submitted or saved.", "error");
+        });
+        document
+            .getElementById("cancelIncident")
+            .addEventListener("click", () => {
+                form.reset();
+                locationField.value = "";
+                document.getElementById("descriptionCount").value =
+                    "0/500";
+                setInlineError(type, typeError, "");
+                setInlineError(locationField, locationError, "");
+                setInlineError(accurate, accurateError, "");
+                message.hidden = true;
+                if (marker) {
+                    marker.remove();
+                    marker = null;
+                }
+                picking = false;
+                message.hidden = true;
+            });
+    });
+</script>
+}

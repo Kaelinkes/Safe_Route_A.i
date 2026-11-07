@@ -1,0 +1,120 @@
+@{
+    ViewData["Title"] = "System analytics";
+}
+
+<section class="page-head">
+    <div class="eyebrow">ADMINISTRATOR</div>
+    <h1>System <em>analytics.</em></h1>
+    <p>Analytics will appear when a data source is connected.</p>
+</section>
+
+<section class="content analytics-page">
+    <div class="content-title">
+        <div>
+            <div class="eyebrow">ACTIVITY OVERVIEW</div>
+            <h2>System activity</h2>
+            <p id="analyticsRangeLabel">Date range validation is available; analytics filtering is not connected yet.</p>
+        </div>
+        <form id="analyticsFilter" class="date-filter" method="post" novalidate>
+            <label for="analyticsFrom">From</label>
+            <input
+                id="analyticsFrom"
+                type="date"
+                required
+                aria-describedby="analyticsMessage"
+            />
+            <label for="analyticsTo">To</label>
+            <input
+                id="analyticsTo"
+                type="date"
+                required
+                aria-describedby="analyticsMessage"
+            />
+            <button class="btn small" type="submit">Check date range</button>
+        </form>
+    </div>
+
+    <p id="analyticsMessage" class="route-message" role="status" aria-live="polite" hidden></p>
+
+    <section class="analytics-tiles" aria-label="Analytics availability">
+        <article>
+            <small>Route requests</small>
+            <strong>Unavailable</strong>
+        </article>
+        <article>
+            <small>Community reports</small>
+            <strong>Unavailable</strong>
+        </article>
+        <article>
+            <small>Risk assessments</small>
+            <strong>Unavailable</strong>
+        </article>
+        <article>
+            <small>Insufficient risk data</small>
+            <strong>Unavailable</strong>
+        </article>
+    </section>
+
+    <div class="analytics-chart-grid">
+        <article class="chart-card">
+            <h3>Route requests by day</h3>
+            <div class="empty-state" role="status">No data available.</div>
+        </article>
+        <article class="chart-card">
+            <h3>Reports by status</h3>
+            <div class="empty-state" role="status">No data available.</div>
+        </article>
+        <article class="chart-card">
+            <h3>Reported incident types</h3>
+            <div class="empty-state" role="status">No data available.</div>
+        </article>
+        <article class="chart-card">
+            <h3>Risk level distribution</h3>
+            <div class="empty-state" role="status">No data available.</div>
+        </article>
+    </div>
+
+    <div class="notice">Analytics filtering and data retrieval are not connected. No request is sent when a date range is checked.</div>
+</section>
+
+@section Scripts {
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        document
+            .getElementById("analyticsFilter")
+            .addEventListener("submit", (event) => {
+                event.preventDefault();
+
+                const from = document.getElementById("analyticsFrom");
+                const to = document.getElementById("analyticsTo");
+                const message = document.getElementById("analyticsMessage");
+
+                from.removeAttribute("aria-invalid");
+                to.removeAttribute("aria-invalid");
+
+                if (!from.value || !to.value || from.value > to.value) {
+                    message.textContent =
+                        "! Choose a valid date range. The From date must not be later than the To date.";
+                    message.className = "route-message error";
+                    message.hidden = false;
+
+                    const invalid =
+                        from.value && to.value && from.value > to.value
+                            ? from
+                            : !from.value
+                              ? from
+                              : to;
+
+                    invalid.setAttribute("aria-invalid", "true");
+                    invalid.focus();
+                    return;
+                }
+
+                message.textContent =
+                    "Date range is valid. Analytics filtering is not connected, so no request was sent.";
+                message.className = "route-message error";
+                message.hidden = false;
+            });
+    });
+</script>
+}

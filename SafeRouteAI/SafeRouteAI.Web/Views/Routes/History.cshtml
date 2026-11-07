@@ -1,0 +1,42 @@
+@{
+    ViewData["Title"] = "Route history";
+}
+
+<section class="page-head">
+    <div class="eyebrow">ROUTE HISTORY</div>
+    <h1>Route <em>history.</em></h1>
+    <p>Your recorded journeys will appear here.</p>
+</section>
+
+<section class="content history-page">
+    <div class="content-title">
+        <div>
+            <div class="eyebrow">RECORDED JOURNEYS</div>
+            <h2>Recent routes</h2>
+        </div>
+    </div>
+
+    <div class="table-scroll" id="historyTableWrap" hidden>
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>Route date</th>
+                    <th>Origin</th>
+                    <th>Destination</th>
+                    <th>Distance</th>
+                    <th>Travel time</th>
+                    <th>Risk classification</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="historyRows"></tbody>
+        </table>
+    </div>
+
+    <div id="historyEmpty" class="empty-state" role="status">
+        <span class="empty-icon" aria-hidden="true">⌖</span>
+        <h2>Route-history data is currently unavailable.</h2>
+        <p>Your recorded journeys will appear when account and history services are connected.</p>
+        <a class="btn" asp-controller="Routes" asp-action="Plan">Plan a route</a>
+    </div>
+</section>

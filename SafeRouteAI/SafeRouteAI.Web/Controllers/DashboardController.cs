@@ -1,0 +1,1 @@
+using Microsoft.AspNetCore.Mvc; namespace SafeRouteAI.Web.Controllers; public class DashboardController:Controller { public IActionResult Index()=>View(); }

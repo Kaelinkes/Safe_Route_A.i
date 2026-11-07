@@ -1,0 +1,24 @@
+@{
+    ViewData["Title"] = "My reports";
+}
+
+<section class="page-head">
+    <div class="eyebrow">YOUR CONTRIBUTIONS</div>
+    <h1>My incident <em>reports.</em></h1>
+    <p>Your submitted reports and their review status will appear here.</p>
+</section>
+
+<section class="content">
+    <div class="content-title">
+        <div>
+            <div class="eyebrow">REPORT HISTORY</div>
+            <h2>Recent submissions</h2>
+        </div>
+        <a class="btn" asp-controller="Reports" asp-action="Index">＋ New report</a>
+    </div>
+
+    <div id="myReportsList" class="empty-state" role="status">
+        <h2>Report history is currently unavailable.</h2>
+        <p>Your submitted reports will appear when report and account services are connected.</p>
+    </div>
+</section>
