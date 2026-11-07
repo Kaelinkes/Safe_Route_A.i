@@ -1,0 +1,40 @@
+@{
+    ViewData["Title"] = "Moderate reports";
+}
+
+<section class="page-head">
+    <div class="eyebrow">ADMINISTRATOR</div>
+    <h1>Moderate <em>reports.</em></h1>
+    <p>Review community reports when report data is connected.</p>
+</section>
+
+<section class="content admin-page">
+    <div class="content-title">
+        <div>
+            <div class="eyebrow">COMMUNITY REPORTS</div>
+            <h2>Report review queue</h2>
+        </div>
+    </div>
+
+    <div class="table-scroll">
+        <table class="moderation-table">
+            <thead>
+                <tr>
+                    <th>Reported</th>
+                    <th>Type and location</th>
+                    <th>Description</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="moderationRows"></tbody>
+        </table>
+    </div>
+
+    <div id="moderationEmpty" class="empty-state" role="status">
+        <h2>Moderation data is currently unavailable.</h2>
+        <p>Reports awaiting review will appear when report data is connected.</p>
+    </div>
+
+    <p id="moderationMessage" class="route-message" role="status" aria-live="polite" hidden></p>
+</section>

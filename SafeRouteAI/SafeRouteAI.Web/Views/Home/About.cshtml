@@ -1,0 +1,78 @@
+@{
+    ViewData["Title"] = "How it works";
+}
+<section class="about">
+    <div class="eyebrow">THE IDEA BEHIND SAFEROUTE AI</div>
+    <h1>
+        Navigation that looks
+        <br />
+        beyond
+        <em>the fastest way.</em>
+    </h1>
+    <p>
+        SafeRoute AI is a proposed route-planning and road-safety system
+        that is designed to present route options using travel time,
+        distance and available road-safety information.
+    </p>
+    <a class="btn" asp-controller="Routes" asp-action="Plan">
+        Plan a route →
+    </a>
+    <div id="aboutMap" class="about-map"></div>
+</section>
+<section class="features">
+    <div class="eyebrow">HOW IT IS INTENDED TO WORK</div>
+    <h2>Three steps. Better context.</h2>
+    <div class="feature-grid">
+        <article>
+            <span>01</span>
+            <h3>Choose your journey</h3>
+            <p>
+                Enter a starting point and destination to view candidate
+                routes.
+            </p>
+        </article>
+        <article>
+            <span>02</span>
+            <h3>Compare the context</h3>
+            <p>
+                Review distance, estimated time and available relative risk
+                indicators.
+            </p>
+        </article>
+        <article>
+            <span>03</span>
+            <h3>Make an informed choice</h3>
+            <p>
+                Use available information as decision support, not a
+                guarantee of safety.
+            </p>
+        </article>
+    </div>
+    <div class="notice">
+        Routing, weather, risk assessment and reports are unavailable until
+        their data services are connected.
+    </div>
+</section>
+@section Styles {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+}
+@section Scripts {
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        if (window.L) {
+            let m = L.map("aboutMap", {
+                scrollWheelZoom: false,
+            }).setView([-29, 24], 5);
+
+            L.tileLayer(
+                "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {
+                    attribution: "&copy; OpenStreetMap contributors",
+                },
+            ).addTo(m);
+
+        }
+    });
+</script>
+}
