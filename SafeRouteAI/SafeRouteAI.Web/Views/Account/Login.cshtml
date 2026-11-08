@@ -21,10 +21,14 @@
         <div class="eyebrow">WELCOME BACK</div>
         <h1>Good to see you.</h1>
         <p>Log in to continue to SafeRoute AI.</p>
+        @if (TempData["RegistrationSuccess"] is string registrationSuccess)
+        {
+            <p class="route-message success" role="status">@registrationSuccess</p>
+        }
         <form id="loginForm" asp-action="Login" method="post" novalidate>
             @Html.AntiForgeryToken()
             <input asp-for="ReturnUrl" type="hidden" />
-            <div asp-validation-summary="ModelOnly" class="inline-error" role="alert"></div>
+            <div asp-validation-summary="All" class="inline-error" role="alert"></div>
             <label for="loginEmail">
                 Email address
                 <span class="required-mark">*</span>

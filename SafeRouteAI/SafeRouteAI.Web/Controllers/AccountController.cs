@@ -96,6 +96,45 @@ public sealed class AccountController : Controller
     [HttpGet]
     public IActionResult Register() => View();
 
+    [AllowAnonymous]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Register(
+        RegisterViewModel model,
+        CancellationToken cancellationToken)
+    {
+        if (!model.ResponsibleUse)
+        {
+            ModelState.AddModelError(
+                nameof(model.ResponsibleUse),
+                "Please confirm the responsible-use statement.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        var result = await _apiClient.RegisterAsync(
+            new AuthRegisterRequest(model.Name, model.Email, model.Password),
+            cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            ModelState.AddModelError(
+                string.Empty,
+                result.Error?.StatusCode == StatusCodes.Status409Conflict
+                    ? "An account with this email already exists."
+                    : result.Error?.StatusCode == StatusCodes.Status400BadRequest
+                        ? "Please check your details and password requirements."
+                        : "Registration is currently unavailable. Please try again later.");
+            return View(model);
+        }
+
+        TempData["RegistrationSuccess"] = "Your account has been created. You can now log in.";
+        return RedirectToAction(nameof(Login));
+    }
+
     [Authorize]
     [HttpPost]
     [ValidateAntiForgeryToken]

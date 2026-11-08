@@ -1,6 +1,8 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SafeRouteAI.Web.Models.Api;
+using SafeRouteAI.Web.Models.Pages;
 using SafeRouteAI.Web.Services;
 
 namespace SafeRouteAI.Web.Controllers;
@@ -19,7 +21,23 @@ public class RoutesController : Controller
 
     public IActionResult Compare() => View();
 
-    public IActionResult History() => View();
+    public async Task<IActionResult> History(CancellationToken cancellationToken)
+    {
+        var token = User.FindFirstValue("access_token");
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return Challenge();
+        }
+
+        var result = await _apiClient.GetRouteHistoryAsync(token, cancellationToken);
+        return View(new RouteHistoryPageViewModel
+        {
+            Routes = result.Value ?? [],
+            ErrorMessage = result.IsSuccess
+                ? null
+                : "Route history could not be loaded. Please try again later."
+        });
+    }
 
     [HttpGet]
     public async Task<IActionResult> Weather(

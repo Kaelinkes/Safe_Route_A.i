@@ -8,6 +8,7 @@ public interface ICommunityReportRepository
     Task AddAsync(CommunityReportDto report);
     Task<List<CommunityReportDto>> GetPendingAsync();
     Task<List<CommunityReportDto>> GetApprovedAsync();
+    Task<List<CommunityReportDto>> GetByUserAsync(int userId);
     Task UpdateStatusAsync(int reportId, ReportStatus status, int adminId);
 }
 

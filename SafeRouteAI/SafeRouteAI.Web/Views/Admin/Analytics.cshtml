@@ -1,11 +1,12 @@
 @{
     ViewData["Title"] = "System analytics";
 }
+@model SafeRouteAI.Web.Models.Pages.AdminAnalyticsPageViewModel
 
 <section class="page-head">
     <div class="eyebrow">ADMINISTRATOR</div>
     <h1>System <em>analytics.</em></h1>
-    <p>Analytics will appear when a data source is connected.</p>
+    <p>Counts and breakdowns are retrieved from the application database.</p>
 </section>
 
 <section class="content analytics-page">
@@ -13,108 +14,190 @@
         <div>
             <div class="eyebrow">ACTIVITY OVERVIEW</div>
             <h2>System activity</h2>
-            <p id="analyticsRangeLabel">Date range validation is available; analytics filtering is not connected yet.</p>
         </div>
-        <form id="analyticsFilter" class="date-filter" method="post" novalidate>
+        <form asp-action="Analytics" method="get" class="date-filter">
             <label for="analyticsFrom">From</label>
-            <input
-                id="analyticsFrom"
-                type="date"
-                required
-                aria-describedby="analyticsMessage"
-            />
+            <input id="analyticsFrom" type="date" name="from"
+                   value="@(Model.Analytics?.From.ToString("yyyy-MM-dd") ?? Context.Request.Query["from"])" required />
             <label for="analyticsTo">To</label>
-            <input
-                id="analyticsTo"
-                type="date"
-                required
-                aria-describedby="analyticsMessage"
-            />
-            <button class="btn small" type="submit">Check date range</button>
+            <input id="analyticsTo" type="date" name="to"
+                   value="@(Model.Analytics?.To.ToString("yyyy-MM-dd") ?? Context.Request.Query["to"])" required />
+            <button class="btn small" type="submit">Apply range</button>
         </form>
     </div>
 
-    <p id="analyticsMessage" class="route-message" role="status" aria-live="polite" hidden></p>
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <p class="route-message error" role="alert">@Model.ErrorMessage</p>
+    }
 
-    <section class="analytics-tiles" aria-label="Analytics availability">
-        <article>
-            <small>Route requests</small>
-            <strong>Unavailable</strong>
-        </article>
-        <article>
-            <small>Community reports</small>
-            <strong>Unavailable</strong>
-        </article>
-        <article>
-            <small>Risk assessments</small>
-            <strong>Unavailable</strong>
-        </article>
-        <article>
-            <small>Insufficient risk data</small>
-            <strong>Unavailable</strong>
-        </article>
-    </section>
+    @if (Model.Analytics is { } analytics)
+    {
+        <p>Showing @analytics.From.ToString("dd MMM yyyy") – @analytics.To.ToString("dd MMM yyyy"). Risk, accident, and model metadata counts cover all available records because those tables do not include a reporting date range.</p>
 
-    <div class="analytics-chart-grid">
-        <article class="chart-card">
-            <h3>Route requests by day</h3>
-            <div class="empty-state" role="status">No data available.</div>
-        </article>
-        <article class="chart-card">
-            <h3>Reports by status</h3>
-            <div class="empty-state" role="status">No data available.</div>
-        </article>
-        <article class="chart-card">
-            <h3>Reported incident types</h3>
-            <div class="empty-state" role="status">No data available.</div>
-        </article>
-        <article class="chart-card">
-            <h3>Risk level distribution</h3>
-            <div class="empty-state" role="status">No data available.</div>
-        </article>
-    </div>
+        <section class="analytics-tiles" aria-label="Database totals">
+            <article><small>Route requests in range</small><strong>@analytics.RouteRequests</strong></article>
+            <article><small>Community reports in range</small><strong>@analytics.CommunityReports</strong></article>
+            <article><small>Risk assessments (all time)</small><strong>@analytics.RiskAssessments</strong></article>
+            <article><small>Insufficient risk data (all time)</small><strong>@analytics.InsufficientRiskAssessments</strong></article>
+            <article><small>Accident records (all time)</small><strong>@analytics.AccidentRecords</strong></article>
+            <article><small>Model versions (metadata)</small><strong>@analytics.ModelVersions</strong></article>
+        </section>
 
-    <div class="notice">Analytics filtering and data retrieval are not connected. No request is sent when a date range is checked.</div>
-</section>
-
-@section Scripts {
-<script>
-    document.addEventListener("DOMContentLoaded", () => {
-        document
-            .getElementById("analyticsFilter")
-            .addEventListener("submit", (event) => {
-                event.preventDefault();
-
-                const from = document.getElementById("analyticsFrom");
-                const to = document.getElementById("analyticsTo");
-                const message = document.getElementById("analyticsMessage");
-
-                from.removeAttribute("aria-invalid");
-                to.removeAttribute("aria-invalid");
-
-                if (!from.value || !to.value || from.value > to.value) {
-                    message.textContent =
-                        "! Choose a valid date range. The From date must not be later than the To date.";
-                    message.className = "route-message error";
-                    message.hidden = false;
-
-                    const invalid =
-                        from.value && to.value && from.value > to.value
-                            ? from
-                            : !from.value
-                              ? from
-                              : to;
-
-                    invalid.setAttribute("aria-invalid", "true");
-                    invalid.focus();
-                    return;
+        <div class="analytics-chart-grid">
+            <article class="chart-card">
+                <h3>Route requests by day</h3>
+                @if (analytics.RoutesByDay.Count == 0)
+                {
+                    <p class="empty-state">No route requests in this period.</p>
                 }
+                else
+                {
+                    <ul class="data-list">
+                        @foreach (var day in analytics.RoutesByDay)
+                        {
+                            <li><span>@day.Date.ToString("dd MMM yyyy")</span><strong>@day.Count</strong></li>
+                        }
+                    </ul>
+                }
+            </article>
+            <article class="chart-card">
+                <h3>Reports by status</h3>
+                @if (analytics.ReportsByStatus.Count == 0)
+                {
+                    <p class="empty-state">No reports in this period.</p>
+                }
+                else
+                {
+                    <ul class="data-list">
+                        @foreach (var item in analytics.ReportsByStatus)
+                        {
+                            <li><span>@item.Name</span><strong>@item.Count</strong></li>
+                        }
+                    </ul>
+                }
+            </article>
+            <article class="chart-card">
+                <h3>Reported incident types</h3>
+                @if (analytics.ReportsByType.Count == 0)
+                {
+                    <p class="empty-state">No incident types in this period.</p>
+                }
+                else
+                {
+                    <ul class="data-list">
+                        @foreach (var item in analytics.ReportsByType)
+                        {
+                            <li><span>@item.Name</span><strong>@item.Count</strong></li>
+                        }
+                    </ul>
+                }
+            </article>
+            <article class="chart-card">
+                <h3>Risk level distribution</h3>
+                @if (analytics.RiskByLevel.Count == 0)
+                {
+                    <p class="empty-state">No classified risk assessments.</p>
+                }
+                else
+                {
+                    <ul class="data-list">
+                        @foreach (var item in analytics.RiskByLevel)
+                        {
+                            <li><span>@item.Name</span><strong>@item.Count</strong></li>
+                        }
+                    </ul>
+                }
+            </article>
+        </div>
 
-                message.textContent =
-                    "Date range is valid. Analytics filtering is not connected, so no request was sent.";
-                message.className = "route-message error";
-                message.hidden = false;
-            });
-    });
-</script>
-}
+        <section class="content">
+            <h2>Risk assessments and weather context</h2>
+            @if (analytics.RiskDetails.Count == 0)
+            {
+                <p class="empty-state">No risk-assessment records are available.</p>
+            }
+            else
+            {
+                <div class="table-scroll">
+                    <table>
+                        <thead>
+                            <tr><th>Road segment</th><th>Risk</th><th>Assessment</th><th>Explanation</th><th>Weather observed (UTC)</th><th>Precipitation</th><th>Humidity</th><th>Visibility</th><th>Wind speed</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in analytics.RiskDetails)
+                            {
+                                <tr>
+                                    <td>@item.RoadName</td>
+                                    <td>@(item.Score is double score ? $"{item.Level} ({score:P0})" : item.Level ?? "Insufficient data")</td>
+                                    <td>@item.Status</td>
+                                    <td>@(item.Explanation ?? "—")</td>
+                                    <td>@(item.WeatherObservedAt?.ToString("dd MMM yyyy, HH:mm") ?? "—")</td>
+                                    <td>@(item.Precipitation?.ToString("0.0") ?? "—")</td>
+                                    <td>@(item.Humidity?.ToString("0.0") ?? "—")</td>
+                                    <td>@(item.Visibility?.ToString("0.0") ?? "—")</td>
+                                    <td>@(item.WindSpeed?.ToString("0.0") ?? "—")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </section>
+
+        <div class="analytics-chart-grid">
+            <article class="chart-card">
+                <h3>Accident records</h3>
+                @if (analytics.Accidents.Count == 0)
+                {
+                    <p class="empty-state">No accident records are available.</p>
+                }
+                else
+                {
+                    <div class="table-scroll">
+                        <table>
+                            <thead><tr><th>Occurred</th><th>Type</th><th>Severity</th><th>Location</th></tr></thead>
+                            <tbody>
+                                @foreach (var item in analytics.Accidents)
+                                {
+                                    <tr>
+                                        <td>@item.OccurredAt.ToString("dd MMM yyyy, HH:mm")</td>
+                                        <td>@item.Type</td>
+                                        <td>@item.Severity</td>
+                                        <td>@item.Latitude.ToString("F5", System.Globalization.CultureInfo.InvariantCulture), @item.Longitude.ToString("F5", System.Globalization.CultureInfo.InvariantCulture)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </article>
+            <article class="chart-card">
+                <h3>Model-version metadata</h3>
+                @if (analytics.ModelVersionDetails.Count == 0)
+                {
+                    <p class="empty-state">No model-version metadata is available.</p>
+                }
+                else
+                {
+                    <div class="table-scroll">
+                        <table>
+                            <thead><tr><th>Version</th><th>Trained</th><th>Dataset</th><th>Validation note</th></tr></thead>
+                            <tbody>
+                                @foreach (var item in analytics.ModelVersionDetails)
+                                {
+                                    <tr>
+                                        <td>@item.Version</td>
+                                        <td>@item.TrainedAt.ToString("dd MMM yyyy")</td>
+                                        <td>@item.Dataset</td>
+                                        <td>@item.ValidationSummary</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </article>
+        </div>
+    }
+</section>

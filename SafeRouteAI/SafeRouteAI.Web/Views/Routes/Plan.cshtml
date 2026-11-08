@@ -65,13 +65,16 @@
             </div>
         </section>
 
-        <section class="map-panel route-map-panel" id="routeMapView" aria-label="Route map">
+        <section class="map-panel route-map-panel"
+                 id="routeMapView"
+                 data-reports-url="@Url.Action("Approved", "Reports")"
+                 aria-label="Route map">
             <div class="map-toolbar"><b>⌖ &nbsp; Map</b><span>OpenStreetMap · Location selection prototype</span></div>
             <div class="map-selection-controls" role="group" aria-label="Map location selection">
                 <span>Choose a field, then click the map:</span>
                 <button type="button" data-pick-location="origin" aria-pressed="false">Set origin</button>
                 <button type="button" data-pick-location="destination" aria-pressed="false">Set destination</button>
-                <label class="community-toggle"><input id="showCommunityReports" type="checkbox" disabled /> Community reports unavailable</label>
+                <label class="community-toggle"><input id="showCommunityReports" type="checkbox" /> Show approved community reports</label>
             </div>
             <div id="routeMap" class="planner-map" role="region" aria-label="Interactive map. Choose origin or destination, then click to select coordinates."></div>
             <p id="routeMapStatus" class="route-message" role="status" aria-live="polite">Route geometry will appear on the map when the service returns valid LineString data.</p>
@@ -145,6 +148,8 @@
         let pickField = null;
         const routeMapStatus = document.getElementById("routeMapStatus");
         const routeSummary = document.getElementById("routeSummary");
+        const communityToggle = document.getElementById("showCommunityReports");
+        let communityMarkers = [];
 
         function clearRouteGeometry() {
             if (map && routeGeometryLayer) {
@@ -329,6 +334,44 @@
             map = L.map("routeMap", { zoomControl: false, attributionControl: false }).setView([-29, 24], 5);
             L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "&copy; OpenStreetMap contributors" }).addTo(map);
             L.control.zoom({ position: "topright" }).addTo(map);
+            communityToggle.addEventListener("change", async () => {
+                if (!communityToggle.checked) {
+                    communityMarkers.forEach((marker) => map.removeLayer(marker));
+                    return;
+                }
+
+                communityToggle.disabled = true;
+                try {
+                    const response = await fetch(
+                        document.getElementById("routeMapView").dataset.reportsUrl,
+                        { headers: { Accept: "application/json" } },
+                    );
+                    if (!response.ok) throw new Error("Community reports could not be loaded.");
+                    const reports = await response.json();
+                    communityMarkers = reports
+                        .filter((report) => Number.isFinite(report.latitude) &&
+                            Number.isFinite(report.longitude))
+                        .map((report) => {
+                            const popup = document.createElement("div");
+                            const title = document.createElement("strong");
+                            const description = document.createElement("p");
+                            title.textContent = report.incidentType;
+                            description.textContent = report.description || "No description provided.";
+                            popup.append(title, description);
+                            return L.marker([report.latitude, report.longitude])
+                                .bindPopup(popup)
+                                .addTo(map);
+                        });
+                    document.getElementById("routeMapStatus").textContent =
+                        `${communityMarkers.length} approved community report(s) displayed.`;
+                } catch {
+                    communityToggle.checked = false;
+                    document.getElementById("routeMapStatus").textContent =
+                        "Approved community reports could not be loaded.";
+                } finally {
+                    communityToggle.disabled = false;
+                }
+            });
             map.on("click", (event) => {
                 if (!pickField) return;
 

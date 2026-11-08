@@ -1,12 +1,18 @@
 @{
     ViewData["Title"] = "Route history";
 }
+@model SafeRouteAI.Web.Models.Pages.RouteHistoryPageViewModel
 
 <section class="page-head">
     <div class="eyebrow">ROUTE HISTORY</div>
     <h1>Route <em>history.</em></h1>
-    <p>Your recorded journeys will appear here.</p>
+    <p>Your saved journeys from the database are listed below.</p>
 </section>
+
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+    <p class="route-message error" role="alert">@Model.ErrorMessage</p>
+}
 
 <section class="content history-page">
     <div class="content-title">
@@ -16,7 +22,9 @@
         </div>
     </div>
 
-    <div class="table-scroll" id="historyTableWrap" hidden>
+    @if (Model.Routes.Count > 0)
+    {
+    <div class="table-scroll" id="historyTableWrap">
         <table class="history-table">
             <thead>
                 <tr>
@@ -25,18 +33,53 @@
                     <th>Destination</th>
                     <th>Distance</th>
                     <th>Travel time</th>
-                    <th>Risk classification</th>
+                    <th>Risk score</th>
+                    <th>Road segments</th>
                     <th></th>
                 </tr>
             </thead>
-            <tbody id="historyRows"></tbody>
+            <tbody>
+                @foreach (var route in Model.Routes)
+                {
+                    var option = route.Options.OrderBy(item => item.Rank).FirstOrDefault();
+                    <tr>
+                        <td>@route.RequestedAt.ToLocalTime().ToString("dd MMM yyyy, HH:mm")</td>
+                        <td>@route.Origin</td>
+                        <td>@route.Destination</td>
+                        <td>@(option is null ? "—" : $"{option.DistanceKm:0.0} km")</td>
+                        <td>@(option is null ? "—" : $"{option.DurationMinutes:0} min")</td>
+                        <td>@(option?.RiskScore is double score ? $"{score:P0}" : "Insufficient data")</td>
+                        <td>@(option is null || option.RoadSegments.Count == 0 ? "—" : string.Join(", ", option.RoadSegments))</td>
+                        <td>@route.Options.Count option(s)</td>
+                    </tr>
+                    @if (route.RiskLogs.Count > 0)
+                    {
+                        <tr>
+                            <td colspan="8">
+                                <details>
+                                    <summary>@route.RiskLogs.Count saved risk log(s)</summary>
+                                    <ul>
+                                        @foreach (var log in route.RiskLogs)
+                                        {
+                                            <li>@log.LoggedAt.ToLocalTime().ToString("dd MMM yyyy, HH:mm"): <code>@log.Snapshot</code></li>
+                                        }
+                                    </ul>
+                                </details>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
         </table>
     </div>
-
-    <div id="historyEmpty" class="empty-state" role="status">
-        <span class="empty-icon" aria-hidden="true">⌖</span>
-        <h2>Route-history data is currently unavailable.</h2>
-        <p>Your recorded journeys will appear when account and history services are connected.</p>
-        <a class="btn" asp-controller="Routes" asp-action="Plan">Plan a route</a>
-    </div>
+    }
+    else if (string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div id="historyEmpty" class="empty-state" role="status">
+            <span class="empty-icon" aria-hidden="true">⌖</span>
+            <h2>No saved journeys yet.</h2>
+            <p>Journeys will appear here after they are saved to your account.</p>
+            <a class="btn" asp-controller="Routes" asp-action="Plan">Plan a route</a>
+        </div>
+    }
 </section>

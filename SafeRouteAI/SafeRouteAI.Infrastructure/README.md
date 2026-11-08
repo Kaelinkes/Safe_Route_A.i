@@ -72,6 +72,14 @@ Use them with `POST /api/v1/auth/login`. These are public, predictable
 development-only credentials; never enable this seeding behavior for a
 production environment or reuse these passwords outside local testing.
 
+Development startup also inserts the illustrative sample routes, road
+segments, weather observations, risk assessments and explanations, route
+options and risk logs, community reports, accident records, and model-version
+metadata described in [`SEED-DATA.md`](./SEED-DATA.md). This seed is
+idempotent and uses the test user/admin accounts above. It is not run in
+production. The sample routes and risk data are not live routing or validated
+safety information.
+
 ## Create later migrations
 
 After an approved Domain or mapping change, scaffold and inspect a migration:
