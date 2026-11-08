@@ -11,7 +11,7 @@ public sealed class AppDbContextModelTests
     public void ModelContainsDomainEntitiesKeysAndRelationships()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseSqlServer(AppDbContext.DefaultConnection)
+            .UseSqlServer("Server=localhost;Database=SafeRouteModelTest;Trusted_Connection=True")
             .Options;
 
         using var db = new AppDbContext(options);
@@ -62,6 +62,16 @@ public sealed class AppDbContextModelTests
         Assert.Equal(typeof(CommunityReportStatus), status.ClrType);
         Assert.Equal(typeof(string), status.GetTypeMapping().Converter!.ProviderClrType);
         Assert.Equal("nvarchar(max)", status.GetColumnType());
+
+        var riskAssessment = entityTypes[typeof(RiskAssessment)];
+        Assert.Equal(
+            typeof(string),
+            riskAssessment.FindProperty(nameof(RiskAssessment.RiskLevel))!
+                .GetTypeMapping().Converter!.ProviderClrType);
+        Assert.Equal(
+            typeof(string),
+            riskAssessment.FindProperty(nameof(RiskAssessment.AssessmentStatus))!
+                .GetTypeMapping().Converter!.ProviderClrType);
     }
 
     private static void AssertRelationship<TDependent, TPrincipal>(

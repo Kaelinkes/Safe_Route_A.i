@@ -4,32 +4,29 @@ For the full database table catalog, relationships, column conventions,
 indexes, schema guarantees, migration history, and known gaps, see
 [`DATABASE-DESIGN.md`](./DATABASE-DESIGN.md).
 
-`SafeRouteDbContext` maps the Domain entities to SQL Server. Domain does not
+`AppDbContext` maps the Domain entities to SQL Server. Domain does not
 depend on EF Core. The database stores entity data and relationships;
 business calculations, validation, risk rules, and geometry encoding or
 decoding belong in application code.
 
 ## Configure a development connection
 
-The API reads `ConnectionStrings:SafeRouteDatabase`. Keep credentials out of
-source control. In zsh, enter the password without echoing it and export a
-test-only connection string in the terminal used to start the API:
+The API reads `ConnectionStrings:DefaultConnection`. Keep credentials out of
+source control and configure the connection with API user-secrets:
 
-```zsh
-read -s "DB_PASSWORD?SQL Server password: "
-echo
-export ConnectionStrings__SafeRouteDatabase="Server=localhost,1435;Database=SafeRouteDomainTest;User Id=sa;Password=$DB_PASSWORD;Encrypt=True;TrustServerCertificate=True"
-unset DB_PASSWORD
+```sh
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" \
+  "Server=localhost,1433;Database=SafeRouteDatabase;User Id=sa;Password=<your-password>;Encrypt=True;TrustServerCertificate=True" \
+  --project SafeRouteAI/SafeRouteAI.API/SafeRouteAI.API.csproj
 ```
 
-Replace the server, database, and login with the intended environment.
-Alternatively, store the connection using API user-secrets. Do not commit or
-share passwords or full connection strings. On macOS, SQL Server must be
-running in Docker or hosted remotely.
+Replace the server, database, login, and password with the intended
+configuration. On macOS, SQL Server must be running in Docker or hosted
+remotely. Do not commit or share passwords or full connection strings.
 
 ## Automatic migrations
 
-Infrastructure registers `SafeRouteDbContext`; the API calls
+Infrastructure registers `AppDbContext`; the API calls
 `Database.MigrateAsync()` before accepting requests. EF Core creates a missing
 database and applies unapplied migrations. A missing connection string,
 unavailable SQL Server, or migration failure stops startup explicitly.
@@ -40,21 +37,40 @@ Run the API from the repository root:
 dotnet run --project SafeRouteAI/SafeRouteAI.API/SafeRouteAI.API.csproj
 ```
 
-Startup logs should indicate it is applying migrations, followed by
-`SafeRoute database is ready.` The SQL login must be permitted to create the
-database (if needed) and apply schema changes.
+Startup logs indicate when migrations are being applied and when they are up
+to date. The SQL login must be permitted to create the database (if needed)
+and apply schema changes.
 
 For explicit migration application:
 
 ```sh
+ConnectionStrings__DefaultConnection="<connection-string>" \
 dotnet ef database update \
   --project SafeRouteAI/SafeRouteAI.Infrastructure/SafeRouteAI.Infrastructure.csproj \
   --startup-project SafeRouteAI/SafeRouteAI.API/SafeRouteAI.API.csproj
 ```
 
+The design-time EF factory reads this environment variable; it does not read
+API user-secrets.
+
 Use startup migrations for local development and disposable test databases.
 For production, review and deploy generated migration scripts as a controlled
 deployment step instead of letting every API instance modify the schema.
+
+## Development test accounts
+
+When the API runs in the `Development` environment, startup inserts these
+accounts if their email addresses do not already exist. Passwords are hashed
+with the application password hasher. Existing accounts are not modified.
+
+| Role | Email | Password |
+|---|---|---|
+| User | `safertest.user@example.test` | `TestUser123!` |
+| Admin | `safertest.admin@example.test` | `TestAdmin123!` |
+
+Use them with `POST /api/v1/auth/login`. These are public, predictable
+development-only credentials; never enable this seeding behavior for a
+production environment or reuse these passwords outside local testing.
 
 ## Create later migrations
 
@@ -64,7 +80,7 @@ After an approved Domain or mapping change, scaffold and inspect a migration:
 dotnet ef migrations add <MigrationName> \
   --project SafeRouteAI/SafeRouteAI.Infrastructure/SafeRouteAI.Infrastructure.csproj \
   --startup-project SafeRouteAI/SafeRouteAI.API/SafeRouteAI.API.csproj \
-  --output-dir Persistence/Migrations
+  --output-dir Data/Migrations
 ```
 
 The current migration sequence is `DomainAlignedInitial`,

@@ -1,6 +1,7 @@
 @{
     ViewData["Title"] = "Log in";
 }
+@model SafeRouteAI.Web.Models.Auth.LoginViewModel
 <section class="auth">
     <div class="auth-art">
         <span class="logo big" aria-hidden="true">✓</span>
@@ -20,20 +21,22 @@
         <div class="eyebrow">WELCOME BACK</div>
         <h1>Good to see you.</h1>
         <p>Log in to continue to SafeRoute AI.</p>
-        <form id="loginForm" method="post" novalidate>
+        <form id="loginForm" asp-action="Login" method="post" novalidate>
+            @Html.AntiForgeryToken()
+            <input asp-for="ReturnUrl" type="hidden" />
+            <div asp-validation-summary="ModelOnly" class="inline-error" role="alert"></div>
             <label for="loginEmail">
                 Email address
                 <span class="required-mark">*</span>
             </label>
-            <input
-                id="loginEmail"
-                type="email"
-                required
-                maxlength="150"
-                autocomplete="email"
-                placeholder="you@example.com"
-                aria-describedby="loginEmailError"
-            />
+            <input asp-for="Email"
+                   id="loginEmail"
+                   type="email"
+                   required
+                   maxlength="150"
+                   autocomplete="email"
+                   placeholder="you@example.com"
+                   aria-describedby="loginEmailError" />
             <p
                 class="inline-error"
                 id="loginEmailError"
@@ -44,14 +47,13 @@
                 Password
                 <span class="required-mark">*</span>
             </label>
-            <input
-                id="loginPassword"
-                type="password"
-                required
-                autocomplete="current-password"
-                placeholder="Enter your password"
-                aria-describedby="loginPasswordError"
-            />
+            <input asp-for="Password"
+                   id="loginPassword"
+                   type="password"
+                   required
+                   autocomplete="current-password"
+                   placeholder="Enter your password"
+                   aria-describedby="loginPasswordError" />
             <p
                 class="inline-error"
                 id="loginPasswordError"
@@ -59,7 +61,7 @@
                 hidden
             ></p>
             <label class="check">
-                <input type="checkbox" />
+                <input asp-for="RememberMe" type="checkbox" />
                 Remember me on this device
             </label>
             <p
@@ -76,7 +78,6 @@
                 New to SafeRoute AI?
                 <a asp-action="Register">Create an account</a>
             </p>
-            <small>Authentication is not connected. No credentials will be checked.</small>
         </form>
     </div>
 </section>
@@ -91,7 +92,6 @@
             message.hidden = false;
         }
         form.addEventListener("submit", (event) => {
-            event.preventDefault();
             message.hidden = true;
             const email = document.getElementById("loginEmail"),
                 password = document.getElementById("loginPassword");
@@ -102,6 +102,7 @@
             setInlineError(email, emailError, "");
             setInlineError(password, passwordError, "");
             if (!email.value.trim() || !email.checkValidity()) {
+                event.preventDefault();
                 setInlineError(
                     email,
                     emailError,
@@ -112,6 +113,7 @@
             }
             email.removeAttribute("aria-invalid");
             if (!password.value) {
+                event.preventDefault();
                 setInlineError(
                     password,
                     passwordError,
@@ -121,10 +123,6 @@
                 return;
             }
             password.removeAttribute("aria-invalid");
-            show(
-                "Login is not connected yet. No credentials were checked.",
-                "error",
-            );
         });
     });
 </script>

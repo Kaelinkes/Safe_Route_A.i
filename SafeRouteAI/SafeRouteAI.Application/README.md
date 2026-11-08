@@ -166,21 +166,18 @@ dotnet restore SafeRouteAI.slnx
 
 ### 4. Configure the Database
 
-Open `SafeRouteAI.API/appsettings.json` and configure the `DefaultConnection` connection string for your local SQL Server instance.
+Configure `ConnectionStrings:DefaultConnection` with API user-secrets for your
+local SQL Server instance. Do not put credentials in `appsettings.json`.
 
-Example configuration:
-
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=YOUR_SERVER;Database=SafeRouteAI;Trusted_Connection=True;TrustServerCertificate=True"
-  }
-}
+```sh
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" \
+  "Server=YOUR_SERVER;Database=SafeRouteAI;User Id=YOUR_LOGIN;Password=YOUR_PASSWORD;Encrypt=True;TrustServerCertificate=True" \
+  --project SafeRouteAI/SafeRouteAI.API/SafeRouteAI.API.csproj
 ```
 
-Replace `YOUR_SERVER` with your SQL Server instance name.
-
-**Note:** Ensure that your SQL Server instance is running and accessible before starting the API. Avoid committing credentials or sensitive connection details to version control.
+Replace the server, database, login, and password with your SQL Server
+configuration. Ensure that SQL Server is running and accessible before
+starting the API.
 
 ### 5. Build the Solution
 

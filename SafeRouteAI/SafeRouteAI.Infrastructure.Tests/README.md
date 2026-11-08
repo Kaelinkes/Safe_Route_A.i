@@ -1,12 +1,12 @@
 # SQL Server integration-test process
 
-The infrastructure integration test exercises `SafeRouteDbContext` against a
+The infrastructure integration test exercises `AppDbContext` against a
 real SQL Server database. It is different from an in-memory unit test: it
 checks the SQL Server provider, migrations, and persisted data.
 
 ## What the current test verifies
 
-`SafeRouteDbContextIntegrationTests.DomainEntities_CanBeInsertedReadAndUpdated_AndRouteCanBeAnonymous`
+`AppDbContextIntegrationTests.DomainEntities_CanBeInsertedReadAndUpdated_AndRouteCanBeAnonymous`
 does the following:
 
 1. Reads `SAFEROUTE_TEST_CONNECTION_STRING` from the test process environment.

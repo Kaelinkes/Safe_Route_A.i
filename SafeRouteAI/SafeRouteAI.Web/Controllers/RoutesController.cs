@@ -1,9 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SafeRouteAI.Web.Models.Api;
 using SafeRouteAI.Web.Services;
 
 namespace SafeRouteAI.Web.Controllers;
 
+[Authorize]
 public class RoutesController : Controller
 {
     private readonly SafeRouteApiClient _apiClient;
