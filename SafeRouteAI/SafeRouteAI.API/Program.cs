@@ -80,6 +80,11 @@ await using (var scope = app.Services.CreateAsyncScope())
             .GetRequiredService<DevelopmentTestUserSeeder>();
         await testUsers.SeedAsync();
         app.Logger.LogInformation("Development test users are available.");
+
+        var sampleData = scope.ServiceProvider
+            .GetRequiredService<DevelopmentSampleDataSeeder>();
+        await sampleData.SeedAsync();
+        app.Logger.LogInformation("Development sample data is available.");
     }
 }
 

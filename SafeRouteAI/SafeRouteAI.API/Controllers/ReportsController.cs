@@ -30,6 +30,20 @@ public sealed class ReportsController : ControllerBase
         return Ok(reports.Select(ReportResponse.FromDto));
     }
 
+    // GET /api/v1/reports/mine
+    [HttpGet("mine")]
+    [Authorize]
+    public async Task<IActionResult> GetMine()
+    {
+        if (!TryGetUserId(out var userId))
+        {
+            return Unauthorized();
+        }
+
+        var reports = await _reportService.GetByUserAsync(userId);
+        return Ok(reports.Select(ReportResponse.FromDto));
+    }
+
     // POST /api/v1/reports
     // Requires a valid logged-in user.
     [HttpPost]
@@ -76,5 +90,11 @@ public sealed class ReportsController : ControllerBase
         return StatusCode(
             StatusCodes.Status201Created,
             ReportResponse.FromDto(report));
+    }
+
+    private bool TryGetUserId(out int userId)
+    {
+        var value = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return int.TryParse(value, out userId) && userId > 0;
     }
 }

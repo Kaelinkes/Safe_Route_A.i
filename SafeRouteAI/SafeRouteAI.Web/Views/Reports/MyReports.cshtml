@@ -1,12 +1,22 @@
 @{
     ViewData["Title"] = "My reports";
 }
+@model SafeRouteAI.Web.Models.Pages.MyReportsPageViewModel
 
 <section class="page-head">
     <div class="eyebrow">YOUR CONTRIBUTIONS</div>
     <h1>My incident <em>reports.</em></h1>
-    <p>Your submitted reports and their review status will appear here.</p>
+    <p>Your submitted reports and their current review status.</p>
 </section>
+
+@if (TempData["ReportSubmitted"] is string submitted)
+{
+    <p class="route-message success" role="status">@submitted</p>
+}
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+    <p class="route-message error" role="alert">@Model.ErrorMessage</p>
+}
 
 <section class="content">
     <div class="content-title">
@@ -17,8 +27,31 @@
         <a class="btn" asp-controller="Reports" asp-action="Index">＋ New report</a>
     </div>
 
-    <div id="myReportsList" class="empty-state" role="status">
-        <h2>Report history is currently unavailable.</h2>
-        <p>Your submitted reports will appear when report and account services are connected.</p>
-    </div>
+    @if (Model.Reports.Count == 0 && string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div id="myReportsList" class="empty-state" role="status">
+            <h2>No reports submitted yet.</h2>
+            <p>Reports you submit will appear here with their review status.</p>
+        </div>
+    }
+    else if (Model.Reports.Count > 0)
+    {
+        <div class="table-scroll">
+            <table>
+                <thead><tr><th>Reported</th><th>Incident</th><th>Location</th><th>Description</th><th>Status</th></tr></thead>
+                <tbody>
+                    @foreach (var report in Model.Reports)
+                    {
+                        <tr>
+                            <td>@report.ReportedAt.ToLocalTime().ToString("dd MMM yyyy, HH:mm")</td>
+                            <td>@report.IncidentType</td>
+                            <td>@report.Latitude.ToString("F5", System.Globalization.CultureInfo.InvariantCulture), @report.Longitude.ToString("F5", System.Globalization.CultureInfo.InvariantCulture)</td>
+                            <td>@(string.IsNullOrWhiteSpace(report.Description) ? "—" : report.Description)</td>
+                            <td>@report.Status</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
 </section>
