@@ -1,3 +1,4 @@
+
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -13,6 +14,15 @@ public class RouteService : IRouteService
 {
     private const string Url =
         "https://api.openrouteservice.org/v2/directions/driving-car/geojson";
+
+    private static readonly string[] ExtraInfo =
+    [
+        "waytype",
+        "surface",
+        "waycategory",
+        "steepness",
+        "tollways"
+    ];
 
     private readonly HttpClient _http;
     private readonly string _apiKey;
@@ -44,7 +54,8 @@ public class RouteService : IRouteService
             new
             {
                 coordinates,
-                alternative_routes = new { target_count = 3 }
+                alternative_routes = new { target_count = 3 },
+                extra_info = ExtraInfo
             },
             cancellationToken);
 
@@ -55,13 +66,19 @@ public class RouteService : IRouteService
             if (error.Contains("alternative", StringComparison.OrdinalIgnoreCase))
             {
                 response.Dispose();
-                response = await SendAsync(new { coordinates }, cancellationToken);
+
+                response = await SendAsync(
+                    new { coordinates, extra_info = ExtraInfo },
+                    cancellationToken);
             }
         }
         else if (response.StatusCode == HttpStatusCode.BadGateway)
         {
             response.Dispose();
-            response = await SendAsync(new { coordinates }, cancellationToken);
+
+            response = await SendAsync(
+                new { coordinates, extra_info = ExtraInfo },
+                cancellationToken);
         }
 
         using (response)
@@ -81,6 +98,9 @@ public class RouteService : IRouteService
 
             var responseBody =
                 await response.Content.ReadAsStringAsync(cancellationToken);
+Console.WriteLine("===== ORS RAW RESPONSE =====");
+Console.WriteLine(responseBody);
+
 
             using var document = JsonDocument.Parse(responseBody);
 
@@ -109,11 +129,60 @@ public class RouteService : IRouteService
                     $"route-{index++}",
                     distanceKm,
                     durationMinutes,
-                    geometry));
+                    geometry)
+                {
+                    RoadSegments = ReadRoadSegments(feature)
+                });
             }
 
             return routes;
         }
+    }
+
+    private static List<RoadSegmentAttributeDto> ReadRoadSegments(
+        JsonElement feature)
+    {
+        var segments = new List<RoadSegmentAttributeDto>();
+
+        if (!feature.TryGetProperty("properties", out var properties) ||
+            !properties.TryGetProperty("extras", out var extras))
+        {
+            return segments;
+        }
+
+        foreach (var attribute in extras.EnumerateObject())
+        {
+            if (!attribute.Value.TryGetProperty("values", out var values) ||
+                values.ValueKind != JsonValueKind.Array)
+            {
+                continue;
+            }
+
+            var attributeName = attribute.Name == "waytypes"
+                ? "waytype"
+                : attribute.Name;
+
+            foreach (var range in values.EnumerateArray())
+            {
+                if (range.ValueKind != JsonValueKind.Array ||
+                    range.GetArrayLength() < 3)
+                {
+                    continue;
+                }
+
+                var fromIndex = range[0].GetInt32();
+                var toIndex = range[1].GetInt32();
+                var value = range[2].ToString();
+
+                segments.Add(new RoadSegmentAttributeDto(
+                    fromIndex,
+                    toIndex,
+                    attributeName,
+                    value));
+            }
+        }
+
+        return segments;
     }
 
     private async Task<HttpResponseMessage> SendAsync(

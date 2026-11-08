@@ -1,12 +1,10 @@
 
-using SafeRouteAI.API.DTOs;
-using SafeRouteAI.API.Interfaces;
+using System.Net;
+using System.Text;
 using SafeRouteAI.API.Services;
 using SafeRouteAI.Application.DTOs;
 using SafeRouteAI.Domain.Enums;
 using Xunit;
-
-using ApiRiskLevel = SafeRouteAI.API.DTOs.Enums.RiskLevel;
 
 namespace SafeRouteAI.API.Tests;
 
@@ -15,15 +13,25 @@ public class ApiRiskServiceBridgeTests
     [Fact]
     public async Task ValidPrediction_MapsScoreAndLevel()
     {
-        var predictor = new StubPredictionService(
-            new RiskPredictionResponse
-            {
-                RiskLevel = ApiRiskLevel.High,
-                RiskScore = 0.85,
-                IsMock = false
-            });
+        var handler = new StubHttpHandler("""
+        {
+            "results": [
+                {
+                    "status": "ok",
+                    "riskScore": 0.85,
+                    "riskLevel": "High",
+                    "missingFields": [],
+                    "invalidFields": []
+                }
+            ],
+            "weatherProvider": "Open-Meteo",
+            "routePointsProcessed": 1
+        }
+        """);
 
-        var bridge = new ApiRiskServiceBridge(predictor);
+        using var client = CreateClient(handler);
+        var bridge = new ApiRiskServiceBridge(
+            new PythonRoutePredictionClient(client));
 
         var result = await bridge.AssessAsync(
             CreateRoute(),
@@ -32,33 +40,31 @@ public class ApiRiskServiceBridgeTests
         Assert.Equal(AssessmentStatus.Valid, result.Status);
         Assert.Equal(0.85, result.Score);
         Assert.Equal(RiskLevel.High, result.Level);
-
-        Assert.NotNull(predictor.LastRequest);
-        Assert.Equal(
-            "route-001",
-            predictor.LastRequest!.SegmentId);
-
-        Assert.Equal(
-            25.0,
-            predictor.LastRequest.Features["distanceKm"]);
-
-        Assert.Equal(
-            12.0,
-            predictor.LastRequest.Features["windSpeed"]);
+        Assert.Contains("coordinates", handler.RequestBody);
     }
 
     [Fact]
     public async Task InsufficientPrediction_ReturnsNoScore()
     {
-        var predictor = new StubPredictionService(
-            new RiskPredictionResponse
-            {
-                RiskLevel = ApiRiskLevel.InsufficientData,
-                RiskScore = null,
-                IsMock = true
-            });
+        var handler = new StubHttpHandler("""
+        {
+            "results": [
+                {
+                    "status": "insufficient_data",
+                    "riskScore": null,
+                    "riskLevel": null,
+                    "missingFields": ["num_lanes"],
+                    "invalidFields": []
+                }
+            ],
+            "weatherProvider": "Open-Meteo",
+            "routePointsProcessed": 1
+        }
+        """);
 
-        var bridge = new ApiRiskServiceBridge(predictor);
+        using var client = CreateClient(handler);
+        var bridge = new ApiRiskServiceBridge(
+            new PythonRoutePredictionClient(client));
 
         var result = await bridge.AssessAsync(
             CreateRoute(),
@@ -70,59 +76,54 @@ public class ApiRiskServiceBridgeTests
 
         Assert.Null(result.Score);
         Assert.Null(result.Level);
+        Assert.Contains("num_lanes", result.Factors);
     }
 
     [Fact]
-    public async Task MissingWeather_DoesNotCallPredictionService()
+    public async Task RouteGeometry_IsSentToPython()
     {
-        var predictor = new StubPredictionService(
-            new RiskPredictionResponse
-            {
-                RiskLevel = ApiRiskLevel.High,
-                RiskScore = 0.9
-            });
-
-        var bridge = new ApiRiskServiceBridge(predictor);
-
-        var weather = CreateWeather() with
+        var handler = new StubHttpHandler("""
         {
-            IsAvailable = false
-        };
+            "results": [],
+            "weatherProvider": "Open-Meteo",
+            "routePointsProcessed": 0
+        }
+        """);
 
-        var result = await bridge.AssessAsync(
-            CreateRoute(),
-            weather);
+        using var client = CreateClient(handler);
+        var bridge = new ApiRiskServiceBridge(
+            new PythonRoutePredictionClient(client));
 
-        Assert.Equal(
-            AssessmentStatus.InsufficientData,
-            result.Status);
+        await bridge.AssessAsync(CreateRoute(), CreateWeather());
 
-        Assert.Null(result.Score);
-        Assert.Null(predictor.LastRequest);
+        Assert.Contains("28.0", handler.RequestBody);
+        Assert.Contains("-26.0", handler.RequestBody);
     }
 
     [Fact]
-    public async Task CancellationToken_IsForwarded()
+    public async Task PythonHttpError_IsPropagated()
     {
-        var predictor = new StubPredictionService(
-            new RiskPredictionResponse
-            {
-                RiskLevel = ApiRiskLevel.Low,
-                RiskScore = 0.2
-            });
+        var handler = new StubHttpHandler(
+            """{"detail":"Python service unavailable"}""",
+            HttpStatusCode.BadGateway);
 
-        var bridge = new ApiRiskServiceBridge(predictor);
+        using var client = CreateClient(handler);
+        var bridge = new ApiRiskServiceBridge(
+            new PythonRoutePredictionClient(client));
 
-        using var source = new CancellationTokenSource();
+        await Assert.ThrowsAsync<HttpRequestException>(
+            () => bridge.AssessAsync(
+                CreateRoute(),
+                CreateWeather()));
+    }
 
-        await bridge.AssessAsync(
-            CreateRoute(),
-            CreateWeather(),
-            source.Token);
-
-        Assert.Equal(
-            source.Token,
-            predictor.LastCancellationToken);
+    private static HttpClient CreateClient(
+        StubHttpHandler handler)
+    {
+        return new HttpClient(handler)
+        {
+            BaseAddress = new Uri("http://127.0.0.1:8001/")
+        };
     }
 
     private static RouteOptionDto CreateRoute() =>
@@ -130,7 +131,15 @@ public class ApiRiskServiceBridgeTests
             "route-001",
             25.0,
             30.0,
-            "{}");
+            """
+            {
+                "type": "LineString",
+                "coordinates": [
+                    [28.0, -26.0],
+                    [28.1, -26.1]
+                ]
+            }
+            """);
 
     private static WeatherResult CreateWeather() =>
         new(
@@ -142,29 +151,35 @@ public class ApiRiskServiceBridgeTests
             65.0,
             "Clear");
 
-    private sealed class StubPredictionService
-        : IRiskPredictionService
+    private sealed class StubHttpHandler : HttpMessageHandler
     {
-        private readonly RiskPredictionResponse _response;
+        private readonly string _response;
+        private readonly HttpStatusCode _statusCode;
 
-        public RiskPredictionRequest? LastRequest { get; private set; }
+        public string RequestBody { get; private set; } = "";
 
-        public CancellationToken LastCancellationToken { get; private set; }
-
-        public StubPredictionService(
-            RiskPredictionResponse response)
+        public StubHttpHandler(
+            string response,
+            HttpStatusCode statusCode = HttpStatusCode.OK)
         {
             _response = response;
+            _statusCode = statusCode;
         }
 
-        public Task<RiskPredictionResponse> PredictAsync(
-            RiskPredictionRequest request,
-            CancellationToken cancellationToken = default)
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
         {
-            LastRequest = request;
-            LastCancellationToken = cancellationToken;
+            RequestBody = await request.Content!
+                .ReadAsStringAsync(cancellationToken);
 
-            return Task.FromResult(_response);
+            return new HttpResponseMessage(_statusCode)
+            {
+                Content = new StringContent(
+                    _response,
+                    Encoding.UTF8,
+                    "application/json")
+            };
         }
     }
 }

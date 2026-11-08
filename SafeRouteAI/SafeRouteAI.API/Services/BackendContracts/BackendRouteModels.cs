@@ -1,11 +1,17 @@
-
 namespace SafeRouteAI.API.Services.BackendContracts;
 
 public sealed record BackendRouteOption(
     string RouteId,
     double DistanceKm,
     double DurationMinutes,
-    string Geometry);
+    string Geometry,
+  List<BackendRoadSegmentAttribute>? RoadSegments = null);
+
+public sealed record BackendRoadSegmentAttribute(
+    int FromIndex,
+    int ToIndex,
+    string Attribute,
+    string Value);
 
 public sealed record BackendRiskAssessment(
     string Status,
