@@ -54,6 +54,7 @@ public static class MlIntegrationExtensions
             client.BaseAddress = normalizedBaseUrl;
             client.Timeout = TimeSpan.FromSeconds(timeout);
         });
+            services.AddScoped<RouteRiskPredictionAdapter>();
 
         // Python ML prediction client.
         services.AddHttpClient<PythonMlPredictionClient>(client =>
