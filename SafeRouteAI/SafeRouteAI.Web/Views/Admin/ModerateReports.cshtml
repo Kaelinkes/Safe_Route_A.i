@@ -1,12 +1,26 @@
 @{
     ViewData["Title"] = "Moderate reports";
 }
+@model SafeRouteAI.Web.Models.Pages.ModerationPageViewModel
 
 <section class="page-head">
     <div class="eyebrow">ADMINISTRATOR</div>
     <h1>Moderate <em>reports.</em></h1>
-    <p>Review community reports when report data is connected.</p>
+    <p>Review pending community reports saved in the database.</p>
 </section>
+
+@if (TempData["ModerationSuccess"] is string success)
+{
+    <p class="route-message success" role="status">@success</p>
+}
+@if (TempData["ModerationError"] is string moderationError)
+{
+    <p class="route-message error" role="alert">@moderationError</p>
+}
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+    <p class="route-message error" role="alert">@Model.ErrorMessage</p>
+}
 
 <section class="content admin-page">
     <div class="content-title">
@@ -16,6 +30,8 @@
         </div>
     </div>
 
+    @if (Model.Reports.Count > 0)
+    {
     <div class="table-scroll">
         <table class="moderation-table">
             <thead>
@@ -27,14 +43,33 @@
                     <th>Actions</th>
                 </tr>
             </thead>
-            <tbody id="moderationRows"></tbody>
+            <tbody id="moderationRows">
+                @foreach (var report in Model.Reports)
+                {
+                    <tr>
+                        <td>@report.ReportedAt.ToLocalTime().ToString("dd MMM yyyy, HH:mm")</td>
+                        <td>@report.IncidentType<br /><small>@report.Latitude.ToString("F5", System.Globalization.CultureInfo.InvariantCulture), @report.Longitude.ToString("F5", System.Globalization.CultureInfo.InvariantCulture)</small></td>
+                        <td>@(string.IsNullOrWhiteSpace(report.Description) ? "—" : report.Description)</td>
+                        <td>@report.Status</td>
+                        <td>
+                            <form asp-action="ModerateReport" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="reportId" value="@report.ReportId" />
+                                <button class="btn small" type="submit" name="status" value="Approved">Approve</button>
+                                <button class="btn outline small" type="submit" name="status" value="Rejected">Reject</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
         </table>
     </div>
+    }
+    else if (string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div id="moderationEmpty" class="empty-state" role="status">
+            <h2>No reports are awaiting review.</h2>
+        </div>
+    }
 
-    <div id="moderationEmpty" class="empty-state" role="status">
-        <h2>Moderation data is currently unavailable.</h2>
-        <p>Reports awaiting review will appear when report data is connected.</p>
-    </div>
-
-    <p id="moderationMessage" class="route-message" role="status" aria-live="polite" hidden></p>
 </section>

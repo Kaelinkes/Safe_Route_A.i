@@ -29,6 +29,9 @@ public class CommunityReportService(ICommunityReportRepository repository)
     public Task<List<CommunityReportDto>> GetApprovedAsync() =>
         repository.GetApprovedAsync();
 
+    public Task<List<CommunityReportDto>> GetByUserAsync(int userId) =>
+        repository.GetByUserAsync(userId);
+
     public Task ModerateAsync(int reportId, ReportStatus status, int adminId)
     {
         if (status is not (ReportStatus.Approved or ReportStatus.Rejected))

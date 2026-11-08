@@ -43,6 +43,7 @@ public static class DependencyInjection
         services.AddScoped<IUserStore, UserStore>();
         services.AddScoped<AuthService>();
         services.AddScoped<DevelopmentTestUserSeeder>();
+        services.AddScoped<DevelopmentSampleDataSeeder>();
 
         services.AddScoped<ICommunityReportRepository, CommunityReportRepository>();
         services.AddScoped<CommunityReportService>();

@@ -5,5 +5,6 @@ public enum CommunityReportStatus
 {
     Pending,
     Approved,
-    Rejected
+    Rejected,
+    Reviewed
 }

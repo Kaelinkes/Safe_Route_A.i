@@ -88,6 +88,11 @@ Web login sends credentials to the API's `POST /api/v1/auth/login` endpoint.
 The default API address is `http://localhost:5234/`; development test-account
 details are documented in the Infrastructure README.
 
+The authenticated dashboard, route history, report submission/history, and
+administrator moderation/analytics pages load through API endpoints backed by
+the configured database. In Development, startup adds the sample records
+described in the Infrastructure `SEED-DATA.md`.
+
 ## 8. Development Credits
 
 ### Developed By

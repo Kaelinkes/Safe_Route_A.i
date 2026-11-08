@@ -36,9 +36,13 @@
                 </div>
                 <span class="tag">OPENSTREETMAP</span>
             </div>
-            <div id="homeMap" class="map"></div>
+            <div id="homeMap"
+                 class="map"
+                 data-reports-url="@Url.Action("Approved", "Reports")"
+                 role="region"
+                 aria-label="Map of approved community reports"></div>
             <div class="map-key">
-                <span>Route risk information will appear when available.</span>
+                <span>Approved community reports are shown where available.</span>
             </div>
             <div class="map-card">
                 <span class="spark">✦</span>
@@ -126,6 +130,32 @@
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
             attribution: "&copy; OpenStreetMap contributors",
         }).addTo(m);
+
+        const reportsUrl = document.getElementById("homeMap").dataset.reportsUrl;
+        fetch(reportsUrl, { headers: { Accept: "application/json" } })
+            .then((response) => {
+                if (!response.ok) throw new Error("Community reports are unavailable.");
+                return response.json();
+            })
+            .then((reports) => {
+                reports.forEach((report) => {
+                    if (!Number.isFinite(report.latitude) ||
+                        !Number.isFinite(report.longitude)) return;
+                    const popup = document.createElement("div");
+                    const title = document.createElement("strong");
+                    const description = document.createElement("p");
+                    title.textContent = report.incidentType;
+                    description.textContent = report.description || "No description provided.";
+                    popup.append(title, description);
+                    L.marker([report.latitude, report.longitude])
+                        .addTo(m)
+                        .bindPopup(popup);
+                });
+            })
+            .catch(() => {
+                document.querySelector(".map-key span").textContent =
+                    "Approved community reports could not be loaded.";
+            });
 
         L.control
             .zoom({
