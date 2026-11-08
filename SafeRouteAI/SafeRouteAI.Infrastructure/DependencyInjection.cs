@@ -11,9 +11,6 @@ namespace SafeRouteAI.Infrastructure;
 
 public static class DependencyInjection
 {
-    private const string FallbackConnection =
-        "Server=(localdb)\\MSSQLLocalDB;Database=SafeRouteAI;Trusted_Connection=True;TrustServerCertificate=True";
-
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services)
     {
@@ -32,7 +29,8 @@ public static class DependencyInjection
 
             var connectionString =
                 configuration?.GetConnectionString("DefaultConnection")
-                ?? FallbackConnection;
+                ?? throw new InvalidOperationException(
+                    "Connection string 'DefaultConnection' is not configured.");
 
             options.UseSqlServer(
                 connectionString,
@@ -44,6 +42,7 @@ public static class DependencyInjection
         services.AddSingleton<AuthMemoryState>();
         services.AddScoped<IUserStore, UserStore>();
         services.AddScoped<AuthService>();
+        services.AddScoped<DevelopmentTestUserSeeder>();
 
         services.AddScoped<ICommunityReportRepository, CommunityReportRepository>();
         services.AddScoped<CommunityReportService>();

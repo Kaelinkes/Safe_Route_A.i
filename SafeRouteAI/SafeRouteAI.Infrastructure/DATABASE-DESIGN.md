@@ -1,7 +1,7 @@
 # SafeRouteAI database design
 
 This document records the SQL Server schema and persistence behavior currently
-implemented by `SafeRouteDbContext`. It describes the code and migrations in
+implemented by `AppDbContext`. It describes the code and migrations in
 this checkout, not every feature proposed in project context documents.
 
 ## Architecture and ownership
@@ -35,7 +35,7 @@ the database does not impose additional allowed-value lists.
 | `road_segments` | `road_segment_id` identity PK; required start/end latitude and longitude (`decimal(9,6)`); optional `road_type` and `road_name`. The four coordinate fields represent endpoints. |
 | `route_option_road_segments` | Join table for route options and road segments; composite PK (`route_option_id`, `road_segment_id`), both required FKs, and required `segment_order`. |
 | `weather_logs` | `weather_log_id` identity PK; required latitude/longitude (`decimal(9,6)`) and `date_time`; optional `precipitation`, `humidity`, `visibility`, and `wind_speed` (`float`). Units and provider are not stored. |
-| `risk_assessments` | `risk_assessment_id` identity PK; required `road_segment_id` FK; optional `weather_log_id` FK, `risk_score` (`float`), and `risk_level`; required `assessment_status`. This is a road-segment-level assessment. |
+| `risk_assessments` | `risk_assessment_id` identity PK; required `road_segment_id` FK; optional `weather_log_id` FK, `risk_score` (`float`), and `risk_level` (enum stored as `nvarchar(max)`); required `assessment_status` (enum stored as `nvarchar(max)`). This is a road-segment-level assessment. |
 | `risk_explanations` | `risk_explanation_id` identity PK; required `risk_assessment_id` FK and `explanation_text`. A unique index on the FK enforces at most one explanation per assessment. |
 | `community_reports` | `report_id` identity PK; required `user_id` FK, location (`decimal(9,6)`), `incident_type`, `report_date_time`, and `status`; optional `description`, `reviewed_by_admin_id` FK to `users`, and `reviewed_at`. |
 | `accident_records` | `accident_id` identity PK; required location (`decimal(9,6)`) and `date_time`; optional `accident_type` and `severity`. |
@@ -96,7 +96,7 @@ database.
 
 ## Migration history
 
-Migrations live in `Persistence/Migrations`:
+Migrations live in `Data/Migrations`:
 
 1. `20261105101358_DomainAlignedInitial` creates the tables and relational
    constraints for the Domain model.
@@ -115,29 +115,18 @@ changes, and check that the model snapshot is current before applying it.
 
 ## Startup and connection configuration
 
-`AddInfrastructure()` registers `SafeRouteDbContext` with SQL Server and
-transient retry support. The context resolves
-`ConnectionStrings:SafeRouteDatabase` from the host's `IConfiguration` when it
-is first created; a missing connection string throws an explicit
-configuration exception. In API `Program.cs`, `Database.MigrateAsync()` runs
-before the app starts listening; a database connection or migration failure
-therefore prevents startup.
+`AddInfrastructure()` registers `AppDbContext` with SQL Server and transient
+retry support. The context resolves `ConnectionStrings:DefaultConnection`
+from the host's `IConfiguration`; a missing connection string throws an
+explicit configuration exception. In API `Program.cs`,
+`Database.MigrateAsync()` runs before the app starts listening; a database
+connection or migration failure therefore prevents startup.
 
-Use API user-secrets or the `ConnectionStrings__SafeRouteDatabase`
-environment variable. For example, from zsh, prompt for a development
-password without echoing or embedding it in the command:
-
-```zsh
-read -s "DB_PASSWORD?SQL Server password: "
-echo
-export ConnectionStrings__SafeRouteDatabase="Server=localhost,1433;Database=SafeRouteDatabase;User Id=sa;Password=$DB_PASSWORD;Encrypt=True;TrustServerCertificate=True"
-unset DB_PASSWORD
-```
-
-Replace the server, database, and login with the intended environment. Never
-commit or share credentials; rotate any credential that has been exposed.
-For production, deploy reviewed migration scripts through a controlled
-deployment process rather than allowing every API instance to mutate schema.
+Configure the connection using API user-secrets or the
+`ConnectionStrings__DefaultConnection` environment variable. Do not commit or
+share credentials. For production, deploy reviewed migration scripts through
+a controlled process rather than allowing every API instance to mutate the
+schema.
 
 ## Existing databases and migration history
 
