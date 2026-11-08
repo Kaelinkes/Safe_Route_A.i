@@ -1,6 +1,8 @@
 document.addEventListener("DOMContentLoaded", () => {
     const menuButton = document.getElementById("mobileMenu");
     const nav = document.getElementById("siteNav");
+    const customValidationFormSelector = "#registerForm, #loginForm, #incidentForm, #analyticsFilter";
+    const sharedLoadingExclusionSelector = `[data-managed-loading], ${customValidationFormSelector}`;
     function closeMenu(returnFocus) {
         if (!menuButton || !nav) return;
         nav.classList.remove("open");
@@ -62,6 +64,7 @@ document.addEventListener("DOMContentLoaded", () => {
         (event) => {
             const field = event.target;
             if (!(field instanceof HTMLElement) || !("checkValidity" in field)) return;
+            if (field.form?.matches(customValidationFormSelector)) return;
             const wrapper = field.closest("label") || field.parentElement;
             if (!wrapper) return;
             let message = wrapper.querySelector(":scope > .inline-error");
@@ -88,6 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.addEventListener("input", (event) => {
         const field = event.target;
         if (!(field instanceof HTMLElement) || !("checkValidity" in field)) return;
+        if (field.form?.matches(customValidationFormSelector)) return;
         if (field.checkValidity()) {
             field.removeAttribute("aria-invalid");
             const describedBy = (field.getAttribute("aria-describedby") || "").split(/\s+/).filter(Boolean);
@@ -113,7 +117,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (
                 !(event.target instanceof HTMLFormElement) ||
                 event.target.matches(
-                    "[data-managed-loading], #registerForm, #loginForm, #incidentForm, #analyticsFilter",
+                    sharedLoadingExclusionSelector,
                 ) ||
                 !event.target.checkValidity()
             )
