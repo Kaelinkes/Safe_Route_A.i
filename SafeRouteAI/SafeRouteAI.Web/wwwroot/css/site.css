@@ -1142,6 +1142,9 @@ footer small {
     outline: 3px solid #70cfc4;
     outline-offset: 3px;
 }
+.inline-error[hidden] {
+    display: none !important;
+}
 .inline-error {
     display: flex;
     align-items: flex-start;
