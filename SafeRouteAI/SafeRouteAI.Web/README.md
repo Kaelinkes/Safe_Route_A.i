@@ -78,6 +78,16 @@ The SafeRouteAI.Web project forms part of the larger SafeRoute AI solution.
 
 It provides the user-facing application and works alongside the other components developed by the project team.
 
+## Run from VS Code
+
+Select **C#: Launch Startup Project** in Run and Debug and press **F5**. This
+starts the API, starts the MVC Web app after the API is ready, and opens the
+Web homepage in Microsoft Edge when the Web server is listening.
+
+Web login sends credentials to the API's `POST /api/v1/auth/login` endpoint.
+The default API address is `http://localhost:5234/`; development test-account
+details are documented in the Infrastructure README.
+
 ## 8. Development Credits
 
 ### Developed By

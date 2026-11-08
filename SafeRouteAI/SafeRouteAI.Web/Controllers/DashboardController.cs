@@ -1,1 +1,10 @@
-using Microsoft.AspNetCore.Mvc; namespace SafeRouteAI.Web.Controllers; public class DashboardController:Controller { public IActionResult Index()=>View(); }
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace SafeRouteAI.Web.Controllers;
+
+[Authorize]
+public class DashboardController : Controller
+{
+    public IActionResult Index() => View();
+}
