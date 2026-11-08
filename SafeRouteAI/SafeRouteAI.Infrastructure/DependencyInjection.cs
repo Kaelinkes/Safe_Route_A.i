@@ -11,7 +11,7 @@ namespace SafeRouteAI.Infrastructure;
 
 public static class DependencyInjection
 {
-    private const string FallbackConnection =
+    private const string FallbackConnection = 
         "Server=(localdb)\\MSSQLLocalDB;Database=SafeRouteAI;Trusted_Connection=True;TrustServerCertificate=True";
 
     public static IServiceCollection AddInfrastructure(
