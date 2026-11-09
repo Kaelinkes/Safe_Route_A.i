@@ -1,6 +1,7 @@
 @{
     ViewData["Title"] = "Create account";
 }
+@model SafeRouteAI.Web.Models.Auth.RegisterViewModel
 <section class="auth">
     <div class="auth-art">
         <span class="logo big" aria-hidden="true">＋</span>
@@ -20,35 +21,26 @@
         <div class="eyebrow">JOIN SAFEROUTE AI</div>
         <h1>Create your account.</h1>
         <p>A few details and you’re ready to get started.</p>
-        <form id="registerForm" method="post" novalidate>
+        <form id="registerForm" asp-action="Register" method="post" novalidate>
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="All" class="inline-error" role="alert"></div>
+            @if (TempData["RegistrationSuccess"] is string registrationSuccess)
+            {
+                <p class="route-message success" role="status">@registrationSuccess</p>
+            }
             <label for="registerName">
                 Name
                 <span class="required-mark">*</span>
             </label>
-            <input
-                id="registerName"
-                name="name"
-                required
-                maxlength="100"
-                autocomplete="name"
-                placeholder="Your name"
-                aria-describedby="nameError"
-            />
+            <input asp-for="Name" id="registerName" required maxlength="100"
+                   autocomplete="name" placeholder="Your name" aria-describedby="nameError" />
             <p class="inline-error" id="nameError" role="alert" hidden></p>
             <label for="registerEmail">
                 Email address
                 <span class="required-mark">*</span>
             </label>
-            <input
-                id="registerEmail"
-                name="email"
-                type="email"
-                required
-                maxlength="150"
-                autocomplete="email"
-                placeholder="you@example.com"
-                aria-describedby="emailError"
-            />
+            <input asp-for="Email" id="registerEmail" type="email" required maxlength="150"
+                   autocomplete="email" placeholder="you@example.com" aria-describedby="emailError" />
             <p
                 class="inline-error"
                 id="emailError"
@@ -60,17 +52,9 @@
                 <span class="required-mark">*</span>
             </label>
             <div class="password-field">
-                <input
-                    id="pw"
-                    name="password"
-                    type="password"
-                    required
-                    minlength="8"
-                    maxlength="255"
-                    autocomplete="new-password"
-                    placeholder="At least 8 characters"
-                    aria-describedby="passwordError"
-                />
+                <input asp-for="Password" id="pw" type="password" required minlength="8"
+                       maxlength="128" autocomplete="new-password"
+                       placeholder="At least 8 characters" aria-describedby="passwordError" />
                 <button
                     class="password-toggle"
                     type="button"
@@ -90,17 +74,9 @@
                 Confirm password
                 <span class="required-mark">*</span>
             </label>
-            <input
-                id="pw2"
-                name="confirmPassword"
-                type="password"
-                required
-                minlength="8"
-                maxlength="255"
-                autocomplete="new-password"
-                placeholder="Enter password again"
-                aria-describedby="confirmError"
-            />
+            <input asp-for="ConfirmPassword" id="pw2" type="password" required minlength="8"
+                   maxlength="128" autocomplete="new-password"
+                   placeholder="Enter password again" aria-describedby="confirmError" />
             <p
                 class="inline-error"
                 id="confirmError"
@@ -108,12 +84,8 @@
                 hidden
             ></p>
             <label class="check">
-                <input
-                    id="responsibleUse"
-                    type="checkbox"
-                    required
-                    aria-describedby="termsError"
-                />
+                <input asp-for="ResponsibleUse" id="responsibleUse" type="checkbox" required
+                       aria-describedby="termsError" />
                 I agree to use community reporting responsibly.
             </label>
             <p
@@ -136,7 +108,6 @@
                 Already have an account?
                 <a asp-controller="Account" asp-action="Login">Log in</a>
             </p>
-            <small>Registration is not connected. No account will be created.</small>
         </form>
     </div>
 </section>
@@ -174,6 +145,44 @@
                     button.setAttribute("aria-pressed", String(visible));
                 }),
             );
+        const nameField = document.getElementById("registerName");
+        const nameError = document.getElementById("nameError");
+        const emailField = document.getElementById("registerEmail");
+        const emailError = document.getElementById("emailError");
+        const password = document.getElementById("pw");
+        const passwordError = document.getElementById("passwordError");
+        const confirmPassword = document.getElementById("pw2");
+        const confirmError = document.getElementById("confirmError");
+
+        nameField.addEventListener("input", () => {
+            if (nameField.value.trim()) {
+                setInlineError(nameField, nameError, "");
+            }
+        });
+
+        emailField.addEventListener("input", () => {
+            if (emailField.validity.valid) {
+                setInlineError(emailField, emailError, "");
+            }
+        });
+
+        password.addEventListener("input", () => {
+            password.setCustomValidity("");
+            confirmPassword.setCustomValidity("");
+            if (password.value.length >= password.minLength) {
+                setInlineError(password, passwordError, "");
+            }
+            if (confirmError.textContent && confirmPassword.value === password.value) {
+                setInlineError(confirmPassword, confirmError, "");
+            }
+        });
+
+        confirmPassword.addEventListener("input", () => {
+            confirmPassword.setCustomValidity("");
+            if (confirmPassword.value === password.value) {
+                setInlineError(confirmPassword, confirmError, "");
+            }
+        });
         function fail(fieldId, errorId, text) {
             const field = document.getElementById(fieldId),
                 error = document.getElementById(errorId);
@@ -191,28 +200,28 @@
             );
             setInlineError(responsibleUse, termsError, "");
             message.hidden = true;
-            if (!document.getElementById("registerName").value.trim())
+            if (!nameField.value.trim())
                 return fail(
                     "registerName",
                     "nameError",
                     "Please enter your name.",
                 );
-            if (!document.getElementById("registerEmail").checkValidity())
+            if (!emailField.checkValidity())
                 return fail(
                     "registerEmail",
                     "emailError",
                     "Please enter a valid email address.",
                 );
-            if (document.getElementById("pw").value.length < 8)
+            password.setCustomValidity("");
+            confirmPassword.setCustomValidity("");
+            const currentPassword = password.value;
+            if (currentPassword.length < password.minLength)
                 return fail(
                     "pw",
                     "passwordError",
                     "Password must be at least 8 characters long.",
                 );
-            if (
-                document.getElementById("pw").value !==
-                document.getElementById("pw2").value
-            )
+            if (currentPassword !== confirmPassword.value)
                 return fail(
                     "pw2",
                     "confirmError",
@@ -227,10 +236,7 @@
                 responsibleUse.focus();
                 return;
             }
-            showMessage(
-                "Registration is not connected yet. No account was created.",
-                "error",
-            );
+            form.submit();
         });
         function showMessage(text, type) {
             message.textContent = text;

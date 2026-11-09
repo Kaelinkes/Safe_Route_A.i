@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -32,6 +33,182 @@ public sealed class SafeRouteApiClient
         return SendAsync<HealthResponse>(
             new HttpRequestMessage(HttpMethod.Get, "api/v1/health"),
             cancellationToken);
+    }
+
+    public Task<ApiResult<AuthLoginResponse>> LoginAsync(
+        AuthLoginRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var message = new HttpRequestMessage(
+            HttpMethod.Post,
+            "api/v1/auth/login")
+        {
+            Content = JsonContent.Create(request, options: JsonOptions)
+        };
+
+        return SendAsync<AuthLoginResponse>(message, cancellationToken);
+    }
+
+    public Task<ApiResult<UserProfileResponse>> RegisterAsync(
+        AuthRegisterRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var message = new HttpRequestMessage(
+            HttpMethod.Post,
+            "api/v1/auth/register")
+        {
+            Content = JsonContent.Create(request, options: JsonOptions)
+        };
+
+        return SendAsync<UserProfileResponse>(message, cancellationToken);
+    }
+
+    public Task<ApiResult<IReadOnlyList<RouteHistoryResponse>>> GetRouteHistoryAsync(
+        string token,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<IReadOnlyList<RouteHistoryResponse>>(
+            new HttpRequestMessage(HttpMethod.Get, "api/v1/routes/history"),
+            cancellationToken,
+            token);
+
+    public Task<ApiResult<IReadOnlyList<ReportResponse>>> GetMyReportsAsync(
+        string token,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<IReadOnlyList<ReportResponse>>(
+            new HttpRequestMessage(HttpMethod.Get, "api/v1/reports/mine"),
+            cancellationToken,
+            token);
+
+    public Task<ApiResult<IReadOnlyList<ReportResponse>>> GetApprovedReportsAsync(
+        CancellationToken cancellationToken = default) =>
+        SendAsync<IReadOnlyList<ReportResponse>>(
+            new HttpRequestMessage(HttpMethod.Get, "api/v1/reports"),
+            cancellationToken);
+
+    public Task<ApiResult<IReadOnlyList<ReportResponse>>> GetPendingReportsAsync(
+        string token,
+        CancellationToken cancellationToken = default) =>
+        SendAsync<IReadOnlyList<ReportResponse>>(
+            new HttpRequestMessage(HttpMethod.Get, "api/v1/admin/reports/pending"),
+            cancellationToken,
+            token);
+
+    public Task<ApiResult<AdminAnalyticsResponse>> GetAdminAnalyticsAsync(
+        string token,
+        DateOnly? from,
+        DateOnly? to,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new List<string>();
+        if (from is not null)
+        {
+            query.Add("from=" + Uri.EscapeDataString(from.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
+        }
+
+        if (to is not null)
+        {
+            query.Add("to=" + Uri.EscapeDataString(to.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
+        }
+
+        var path = "api/v1/admin/analytics";
+        if (query.Count > 0)
+        {
+            path += "?" + string.Join("&", query);
+        }
+
+        return SendAsync<AdminAnalyticsResponse>(
+            new HttpRequestMessage(HttpMethod.Get, path),
+            cancellationToken,
+            token);
+    }
+
+    public Task<ApiResult<ReportResponse>> SubmitReportAsync(
+        string token,
+        CreateReportRequest report,
+        CancellationToken cancellationToken = default)
+    {
+        var message = new HttpRequestMessage(
+            HttpMethod.Post,
+            "api/v1/reports")
+        {
+            Content = JsonContent.Create(report, options: JsonOptions)
+        };
+
+        return SendAsync<ReportResponse>(message, cancellationToken, token);
+    }
+
+    public Task<ApiResult<bool>> ModerateReportAsync(
+        string token,
+        int reportId,
+        string status,
+        CancellationToken cancellationToken = default)
+    {
+        var message = new HttpRequestMessage(
+            HttpMethod.Patch,
+            $"api/v1/admin/reports/{reportId}/status")
+        {
+            Content = JsonContent.Create(
+                new ModerateReportRequest(status),
+                options: JsonOptions)
+        };
+
+        return SendNoContentAsync(message, token, cancellationToken);
+    }
+
+    public async Task<ApiResult<bool>> LogoutAsync(
+        string token,
+        CancellationToken cancellationToken = default)
+    {
+        if (_httpClient.BaseAddress is null)
+        {
+            return ApiResult<bool>.Failure(new ApiError(
+                ApiErrorKind.Configuration,
+                "API address is not configured.",
+                "Configure SafeRouteApi:BaseAddress before using the API client."));
+        }
+
+        using var request = new HttpRequestMessage(
+            HttpMethod.Post,
+            "api/v1/auth/logout");
+        request.Headers.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            token);
+
+        try
+        {
+            using var response = await _httpClient.SendAsync(
+                request,
+                HttpCompletionOption.ResponseHeadersRead,
+                cancellationToken);
+
+            if (response.IsSuccessStatusCode)
+            {
+                return ApiResult<bool>.Success(true);
+            }
+
+            return ApiResult<bool>.Failure(
+                await CreateHttpErrorAsync(response, cancellationToken));
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (OperationCanceledException exception)
+        {
+            _logger.LogWarning(exception, "The SafeRoute API logout request timed out.");
+            return ApiResult<bool>.Failure(new ApiError(
+                ApiErrorKind.ServiceUnavailable,
+                "The API did not respond in time.",
+                "The requested service is currently unavailable."));
+        }
+        catch (HttpRequestException exception)
+        {
+            _logger.LogWarning(exception, "The SafeRoute API could not be reached during logout.");
+            return ApiResult<bool>.Failure(new ApiError(
+                ApiErrorKind.Connection,
+                "The API could not be reached.",
+                "SafeRoute services are temporarily unavailable."));
+        }
     }
 
     public Task<ApiResult<WeatherResponse>> GetWeatherAsync(
@@ -79,7 +256,8 @@ public sealed class SafeRouteApiClient
 
     private async Task<ApiResult<TResponse>> SendAsync<TResponse>(
         HttpRequestMessage request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string? bearerToken = null)
         where TResponse : class
     {
         using (request)
@@ -90,6 +268,13 @@ public sealed class SafeRouteApiClient
                     ApiErrorKind.Configuration,
                     "API address is not configured.",
                     "Configure SafeRouteApi:BaseAddress before using the API client.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(bearerToken))
+            {
+                request.Headers.Authorization = new AuthenticationHeaderValue(
+                    "Bearer",
+                    bearerToken);
             }
 
             try
@@ -180,8 +365,78 @@ public sealed class SafeRouteApiClient
         }
     }
 
+    private async Task<ApiResult<bool>> SendNoContentAsync(
+        HttpRequestMessage request,
+        string bearerToken,
+        CancellationToken cancellationToken)
+    {
+        using (request)
+        {
+            if (_httpClient.BaseAddress is null)
+            {
+                return ApiResult<bool>.Failure(new ApiError(
+                    ApiErrorKind.Configuration,
+                    "API address is not configured.",
+                    "Configure SafeRouteApi:BaseAddress before using the API client."));
+            }
+
+            request.Headers.Authorization = new AuthenticationHeaderValue(
+                "Bearer",
+                bearerToken);
+
+            try
+            {
+                using var response = await _httpClient.SendAsync(
+                    request,
+                    HttpCompletionOption.ResponseHeadersRead,
+                    cancellationToken);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return ApiResult<bool>.Success(true);
+                }
+
+                return ApiResult<bool>.Failure(
+                    await CreateHttpErrorAsync(response, cancellationToken));
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (OperationCanceledException exception)
+            {
+                _logger.LogWarning(exception, "The SafeRoute API request timed out.");
+                return ApiResult<bool>.Failure(new ApiError(
+                    ApiErrorKind.ServiceUnavailable,
+                    "The API did not respond in time.",
+                    "The requested service is currently unavailable."));
+            }
+            catch (HttpRequestException exception)
+            {
+                _logger.LogWarning(exception, "The SafeRoute API could not be reached.");
+                return ApiResult<bool>.Failure(new ApiError(
+                    ApiErrorKind.Connection,
+                    "The API could not be reached.",
+                    "SafeRoute services are temporarily unavailable."));
+            }
+        }
+    }
+
     private static string? ValidateResponse<TResponse>(TResponse response)
     {
+        if (response is AuthLoginResponse login &&
+            (string.IsNullOrWhiteSpace(login.Token) ||
+             !string.Equals(login.TokenType, "Bearer", StringComparison.OrdinalIgnoreCase) ||
+             login.ExpiresIn <= 0 ||
+             login.User is null ||
+             login.User.UserId <= 0 ||
+             string.IsNullOrWhiteSpace(login.User.Name) ||
+             string.IsNullOrWhiteSpace(login.User.Email) ||
+             string.IsNullOrWhiteSpace(login.User.Role)))
+        {
+            return "The login response is missing required account or session data.";
+        }
+
         if (response is HealthResponse health &&
             (string.IsNullOrWhiteSpace(health.Status) ||
              string.IsNullOrWhiteSpace(health.Service) ||

@@ -32,7 +32,7 @@ public class CommunityReportRepository(AppDbContext db) : ICommunityReportReposi
         GetByStatus(ReportStatus.Pending);
 
     public Task<List<CommunityReportDto>> GetApprovedAsync() =>
-        GetByStatus(ReportStatus.Approved);
+        GetByStatuses(ReportStatus.Approved, ReportStatus.Reviewed);
 
     public async Task UpdateStatusAsync(int reportId, ReportStatus status, int adminId)
     {
@@ -46,13 +46,31 @@ public class CommunityReportRepository(AppDbContext db) : ICommunityReportReposi
         await db.SaveChangesAsync();
     }
 
-    private async Task<List<CommunityReportDto>> GetByStatus(ReportStatus status)
+    public async Task<List<CommunityReportDto>> GetByUserAsync(int userId)
     {
-        var entityStatus = Enum.Parse<CommunityReportStatus>(status.ToString());
+        var rows = await db.Set<CommunityReport>()
+            .AsNoTracking()
+            .Where(report => report.UserID == userId)
+            .OrderByDescending(report => report.ReportDateTime)
+            .ToListAsync();
+
+        return rows.Select(ToDto).ToList();
+    }
+
+    private async Task<List<CommunityReportDto>> GetByStatus(ReportStatus status) =>
+        await GetByStatuses(status);
+
+    private async Task<List<CommunityReportDto>> GetByStatuses(
+        params ReportStatus[] statuses)
+    {
+        var entityStatuses = statuses
+            .Select(status => Enum.Parse<CommunityReportStatus>(status.ToString()))
+            .ToArray();
 
         var rows = await db.Set<CommunityReport>()
             .AsNoTracking()
-            .Where(r => r.Status == entityStatus)
+            .Where(report => entityStatuses.Contains(report.Status))
+            .OrderByDescending(report => report.ReportDateTime)
             .ToListAsync();
 
         return rows.Select(ToDto).ToList();

@@ -6,3 +6,6 @@ public enum ReportStatus
     Approved,
     Rejected
 }
+    Rejected,
+    Reviewed
+}

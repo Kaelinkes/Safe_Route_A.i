@@ -5,9 +5,6 @@ namespace SafeRouteAI.Infrastructure.Data;
 
 public class AppDbContext : DbContext
 {
-    public const string DefaultConnection =
-        "Server=(localdb)\\MSSQLLocalDB;Database=SafeRouteAI;Trusted_Connection=True;TrustServerCertificate=True";
-
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
     public DbSet<User> Users => Set<User>();
@@ -93,9 +90,6 @@ public class AppDbContext : DbContext
         {
             entity.HasKey(x => x.ReportID);
             entity.Property(x => x.ReportID).ValueGeneratedOnAdd();
-    entity.Property(x => x.Status).HasConversion<string>();
-
-
             entity.Property(x => x.Status).HasConversion<string>();
 
             entity.Property(x => x.Latitude).HasPrecision(9, 6);
@@ -118,6 +112,8 @@ public class AppDbContext : DbContext
         {
             entity.HasKey(x => x.RiskAssessmentID);
             entity.Property(x => x.RiskAssessmentID).ValueGeneratedOnAdd();
+            entity.Property(x => x.RiskLevel).HasConversion<string>();
+            entity.Property(x => x.AssessmentStatus).HasConversion<string>();
             entity.HasOne(x => x.RoadSegment)
                 .WithMany(x => x.RiskAssessments)
                 .HasForeignKey(x => x.RoadSegmentID)

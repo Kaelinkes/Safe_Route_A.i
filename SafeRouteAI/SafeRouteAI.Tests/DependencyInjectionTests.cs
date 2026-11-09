@@ -47,15 +47,16 @@ public sealed class DependencyInjectionTests
     }
 
     [Fact]
-    public void AddInfrastructureUsesDefaultSqlServerConnectionWithoutConfiguration()
+    public void AddInfrastructureRequiresAConfiguredSqlServerConnection()
     {
         var services = new ServiceCollection();
         services.AddInfrastructure();
 
         using var provider = services.BuildServiceProvider();
         using var scope = provider.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        Assert.Equal("SafeRouteAI", db.Database.GetDbConnection().Database);
+        var exception = Assert.Throws<InvalidOperationException>(
+            () => scope.ServiceProvider.GetRequiredService<AppDbContext>());
+        Assert.Contains("DefaultConnection", exception.Message);
     }
 }

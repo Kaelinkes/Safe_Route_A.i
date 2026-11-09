@@ -42,11 +42,9 @@
                 <span aria-hidden="true">☰</span>
             </button>
             <nav class="nav" id="siteNav" aria-label="Main navigation">
-                <div
-                    class="role-nav"
-                    data-role-nav="visitor"
-                    aria-label="Visitor navigation"
-                >
+                @if (User.Identity?.IsAuthenticated != true)
+                {
+                <div class="role-nav" data-role-nav="visitor" aria-label="Visitor navigation">
                     <a asp-controller="Home" asp-action="Index">Explore</a>
                     <a asp-controller="Home" asp-action="About">
                         How it works
@@ -66,12 +64,10 @@
                         <span aria-hidden="true">↗</span>
                     </a>
                 </div>
-                <div
-                    class="role-nav"
-                    data-role-nav="user"
-                    aria-label="Registered user navigation"
-                    hidden
-                >
+                }
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                <div class="role-nav" data-role-nav="user" aria-label="Registered user navigation">
                     <a asp-controller="Routes" asp-action="Plan">
                         Plan a route
                     </a>
@@ -82,12 +78,10 @@
                         Report incident
                     </a>
                 </div>
-                <div
-                    class="role-nav"
-                    data-role-nav="admin"
-                    aria-label="Administrator navigation"
-                    hidden
-                >
+                }
+                @if (User.IsInRole("Admin"))
+                {
+                <div class="role-nav" data-role-nav="admin" aria-label="Administrator navigation">
                     <a asp-controller="Dashboard" asp-action="Index">
                         Overview
                     </a>
@@ -98,6 +92,14 @@
                         System Analytics
                     </a>
                 </div>
+                }
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <form asp-controller="Account" asp-action="Logout" method="post">
+                        @Html.AntiForgeryToken()
+                        <button class="nav-cta" type="submit">Log out</button>
+                    </form>
+                }
             </nav>
         </header>
         <main id="mainContent">

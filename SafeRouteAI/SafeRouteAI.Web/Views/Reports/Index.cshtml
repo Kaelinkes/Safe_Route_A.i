@@ -1,6 +1,7 @@
 @{
     ViewData["Title"] = "Report an incident";
 }
+@model SafeRouteAI.Web.Models.Reports.ReportSubmissionViewModel
 <section class="page-head">
     <div class="eyebrow">COMMUNITY ROAD AWARENESS</div>
     <h1>
@@ -16,25 +17,29 @@
     <div class="content">
         <div class="eyebrow">NEW REPORT</div>
         <h2>Incident details</h2>
-        <form id="incidentForm" method="post" novalidate>
+        <form id="incidentForm" asp-action="Index" method="post" novalidate>
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="All" class="inline-error" role="alert"></div>
+            <input asp-for="Latitude" id="reportLatitude" type="hidden" />
+            <input asp-for="Longitude" id="reportLongitude" type="hidden" />
+            @if (ViewData["ErrorMessage"] is string errorMessage)
+            {
+                <p class="route-message error" role="alert">@errorMessage</p>
+            }
             <label for="incidentType">
                 Incident type
                 <span class="required-mark">*</span>
             </label>
-            <select
-                id="incidentType"
-                required
-                aria-describedby="incidentTypeError"
-            >
+            <select asp-for="IncidentType" id="incidentType" required aria-describedby="incidentTypeError">
                 <option value="">Choose an incident type</option>
-                <option>Accident or collision</option>
-                <option>Stalled vehicle</option>
-                <option>Pothole</option>
-                <option>Flooding</option>
-                <option>Damaged road infrastructure</option>
-                <option>Broken streetlight</option>
-                <option>Dangerous pedestrian crossing</option>
-                <option>Other</option>
+                <option value="Accident or collision">Accident or collision</option>
+                <option value="Stalled vehicle">Stalled vehicle</option>
+                <option value="Pothole">Pothole</option>
+                <option value="Flooding">Flooding</option>
+                <option value="Damaged road infrastructure">Damaged road infrastructure</option>
+                <option value="Broken streetlight">Broken streetlight</option>
+                <option value="Dangerous pedestrian crossing">Dangerous pedestrian crossing</option>
+                <option value="Other">Other</option>
             </select>
             <p
                 class="inline-error"
@@ -81,12 +86,11 @@
                 Description
                 <span class="optional-label">Optional</span>
             </label>
-            <textarea
-                id="incidentDescription"
-                maxlength="500"
-                rows="4"
-                placeholder="Describe what you observed. Avoid personal details."
-            ></textarea>
+            <textarea asp-for="Description"
+                      id="incidentDescription"
+                      maxlength="500"
+                      rows="4"
+                      placeholder="Describe what you observed. Avoid personal details."></textarea>
             <div class="character-count">
                 <span>Maximum 500 characters</span>
                 <output id="descriptionCount" for="incidentDescription">
@@ -101,12 +105,11 @@
                 <option>Yesterday</option>
             </select>
             <label class="check">
-                <input
-                    id="reportAccurate"
-                    type="checkbox"
-                    required
-                    aria-describedby="reportAccurateError"
-                />
+                <input asp-for="ResponsibleUse"
+                       id="reportAccurate"
+                       type="checkbox"
+                       required
+                       aria-describedby="reportAccurateError" />
                 I confirm this report is accurate to the best of my
                 knowledge.
             </label>
@@ -135,9 +138,7 @@
                     Cancel
                 </button>
             </div>
-            <small>
-                Report submission is unavailable until a reporting service is connected.
-            </small>
+            <small>Reports are saved as pending until an administrator reviews them.</small>
         </form>
     </div>
     <aside class="side-note">
@@ -182,6 +183,8 @@
         }
         function setPoint(latlng, label) {
             locationField.value = `${label} (${latlng.lat.toFixed(5)}, ${latlng.lng.toFixed(5)})`;
+            document.getElementById("reportLatitude").value = latlng.lat.toFixed(6);
+            document.getElementById("reportLongitude").value = latlng.lng.toFixed(6);
             setInlineError(
                 locationField,
                 document.getElementById("incidentLocationError"),
@@ -205,10 +208,7 @@
                 if (!picking) return;
                 setPoint(event.latlng, "Map coordinates");
                 picking = false;
-                show(
-                    "Map coordinates selected. No place lookup was performed.",
-                    "info",
-                );
+                show("Map coordinates selected.", "info");
             });
         }
         document
@@ -273,13 +273,15 @@
                 accurate.focus();
                 return;
             }
-            show("Report submission is unavailable because reporting integration is not connected. Your report was not submitted or saved.", "error");
+            form.submit();
         });
         document
             .getElementById("cancelIncident")
             .addEventListener("click", () => {
                 form.reset();
                 locationField.value = "";
+                document.getElementById("reportLatitude").value = "";
+                document.getElementById("reportLongitude").value = "";
                 document.getElementById("descriptionCount").value =
                     "0/500";
                 setInlineError(type, typeError, "");

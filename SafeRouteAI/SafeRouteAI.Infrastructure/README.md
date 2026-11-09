@@ -3,6 +3,10 @@
 ## 1. Overview
 
 The SafeRoute AI database is responsible for storing and managing the information required by the application. It provides the data storage foundation for user accounts, route requests, road networks, historical accidents, weather observations, community reports, and road risk assessments.
+`AppDbContext` maps the Domain entities to SQL Server. Domain does not
+depend on EF Core. The database stores entity data and relationships;
+business calculations, validation, risk rules, and geometry encoding or
+decoding belong in application code.
 
 The database uses Microsoft SQL Server as its relational database management system and Entity Framework Core for object-relational mapping (ORM).
 
@@ -365,10 +369,26 @@ dotnet user-secrets set --project SafeRouteAI.API "ConnectionStrings:SafeRouteDa
 Replace the server address and credentials with the details of your local SQL Server instance.
 
 The example uses SQL Server authentication. Developers using Windows authentication or a different SQL Server configuration should adjust the connection string accordingly.
+The API reads `ConnectionStrings:DefaultConnection`. Keep credentials out of
+source control and configure the connection with API user-secrets:
+
+```sh
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" \
+  "Server=localhost,1433;Database=SafeRouteDatabase;User Id=sa;Password=<your-password>;Encrypt=True;TrustServerCertificate=True" \
+  --project SafeRouteAI/SafeRouteAI.API/SafeRouteAI.API.csproj
+```
+
+Replace the server, database, login, and password with the intended
+configuration. On macOS, SQL Server must be running in Docker or hosted
+remotely. Do not commit or share passwords or full connection strings.
 
 Do not commit passwords, private connection strings, or production database credentials to GitHub.
 
 On macOS, SQL Server must be running in Docker or hosted remotely.
+Infrastructure registers `AppDbContext`; the API calls
+`Database.MigrateAsync()` before accepting requests. EF Core creates a missing
+database and applies unapplied migrations. A missing connection string,
+unavailable SQL Server, or migration failure stops startup explicitly.
 
 ## 10. Create and Apply the Database
 
@@ -381,6 +401,9 @@ dotnet tool install --global dotnet-ef --version 10.0.8
 ```
 
 If the tool is already installed, make sure its version is compatible with the project's Entity Framework Core packages.
+Startup logs indicate when migrations are being applied and when they are up
+to date. The SQL login must be permitted to create the database (if needed)
+and apply schema changes.
 
 From the solution directory, the following commands can be used.
 
@@ -393,11 +416,52 @@ dotnet ef migrations add InitialCreate --project SafeRouteAI.Infrastructure --st
 This creates a migration based on the current entity classes and database configuration.
 
 Migration names should describe the database change being introduced.
+ConnectionStrings__DefaultConnection="<connection-string>" \
+dotnet ef database update \
+  --project SafeRouteAI/SafeRouteAI.Infrastructure/SafeRouteAI.Infrastructure.csproj \
+  --startup-project SafeRouteAI/SafeRouteAI.API/SafeRouteAI.API.csproj
+```
+
+The design-time EF factory reads this environment variable; it does not read
+API user-secrets.
+
+Use startup migrations for local development and disposable test databases.
+For production, review and deploy generated migration scripts as a controlled
+deployment step instead of letting every API instance modify the schema.
+
+## Development test accounts
+
+When the API runs in the `Development` environment, startup inserts these
+accounts if their email addresses do not already exist. Passwords are hashed
+with the application password hasher. Existing accounts are not modified.
+
+| Role | Email | Password |
+|---|---|---|
+| User | `safertest.user@example.test` | `TestUser123!` |
+| Admin | `safertest.admin@example.test` | `TestAdmin123!` |
+
+Use them with `POST /api/v1/auth/login`. These are public, predictable
+development-only credentials; never enable this seeding behavior for a
+production environment or reuse these passwords outside local testing.
+
+Development startup also inserts the illustrative sample routes, road
+segments, weather observations, risk assessments and explanations, route
+options and risk logs, community reports, accident records, and model-version
+metadata described in [`SEED-DATA.md`](./SEED-DATA.md). This seed is
+idempotent and uses the test user/admin accounts above. It is not run in
+production. The sample routes and risk data are not live routing or validated
+safety information.
+
+## Create later migrations
 
 ### 10.2 Apply Migrations
 
 ```sh
 dotnet ef database update --project SafeRouteAI.Infrastructure --startup-project SafeRouteAI.API
+dotnet ef migrations add <MigrationName> \
+  --project SafeRouteAI/SafeRouteAI.Infrastructure/SafeRouteAI.Infrastructure.csproj \
+  --startup-project SafeRouteAI/SafeRouteAI.API/SafeRouteAI.API.csproj \
+  --output-dir Data/Migrations
 ```
 
 This applies pending migrations to the configured SQL Server database.

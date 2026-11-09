@@ -1,28 +1,34 @@
 @{
     ViewData["Title"] = "Road safety overview";
 }
+@model SafeRouteAI.Web.Models.Pages.DashboardPageViewModel
 
 <section class="page-head split">
     <div>
         <div class="eyebrow">ROAD SAFETY OVERVIEW</div>
         <h1>Your road-safety <em>snapshot.</em></h1>
-        <p>Journey and community information will appear when connected services are available.</p>
+        <p>Your saved journeys and community reports from SafeRoute are shown here.</p>
     </div>
     <a class="btn" asp-controller="Routes" asp-action="Plan">＋ Plan a route</a>
 </section>
 
-<section class="stats" aria-label="Road safety information availability">
+@if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+{
+    <p class="route-message error" role="alert">@Model.ErrorMessage</p>
+}
+
+<section class="stats" aria-label="Road safety information">
     <article>
-        <small>Recent route searches</small>
-        <strong>Unavailable</strong>
+        <small>Saved journeys</small>
+        <strong>@Model.Routes.Count</strong>
     </article>
     <article>
-        <small>Community reports</small>
-        <strong>Unavailable</strong>
+        <small>Your community reports</small>
+        <strong>@Model.Reports.Count</strong>
     </article>
     <article>
-        <small>Risk assessment</small>
-        <strong>Unavailable</strong>
+        <small>Reports awaiting review</small>
+        <strong>@Model.Reports.Count(report => report.Status == "Pending")</strong>
     </article>
 </section>
 
@@ -30,14 +36,43 @@
     <div class="content">
         <div class="eyebrow">RECENT JOURNEYS</div>
         <h2>Recent routes</h2>
-        <div class="empty-state" role="status">
-            <p>No journey history is available yet.</p>
-        </div>
+        @if (Model.Routes.Count == 0)
+        {
+            <div class="empty-state" role="status"><p>No saved journeys yet.</p></div>
+        }
+        else
+        {
+            <ul class="data-list">
+                @foreach (var route in Model.Routes.Take(5))
+                {
+                    <li>
+                        <b>@route.Origin → @route.Destination</b>
+                        <small>@route.RequestedAt.ToLocalTime().ToString("dd MMM yyyy, HH:mm")</small>
+                    </li>
+                }
+            </ul>
+            <a asp-controller="Routes" asp-action="History">View route history →</a>
+        }
     </div>
     <aside class="content">
         <div class="eyebrow">COMMUNITY</div>
         <h2>Incident reports</h2>
-        <p>No community reports available.</p>
+        @if (Model.Reports.Count == 0)
+        {
+            <p>No reports submitted yet.</p>
+        }
+        else
+        {
+            <ul class="data-list">
+                @foreach (var report in Model.Reports.Take(5))
+                {
+                    <li>
+                        <b>@report.IncidentType</b>
+                        <small>@report.Status · @report.ReportedAt.ToLocalTime().ToString("dd MMM yyyy")</small>
+                    </li>
+                }
+            </ul>
+        }
         <a class="btn wide" asp-controller="Reports" asp-action="Index">Report an incident</a>
         <p><a asp-controller="Reports" asp-action="MyReports">View my reports →</a></p>
     </aside>

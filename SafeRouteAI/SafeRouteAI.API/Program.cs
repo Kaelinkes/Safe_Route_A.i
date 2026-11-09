@@ -1,9 +1,12 @@
 
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.EntityFrameworkCore;
 using SafeRouteAI.API.Security;
 using SafeRouteAI.API.Services;
 using SafeRouteAI.Infrastructure;
+using SafeRouteAI.Infrastructure.Data;
+using SafeRouteAI.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -63,6 +66,27 @@ builder.Services
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
+
+await using (var scope = app.Services.CreateAsyncScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    app.Logger.LogInformation("Applying pending database migrations.");
+    await db.Database.MigrateAsync();
+    app.Logger.LogInformation("Database migrations are up to date.");
+
+    if (app.Environment.IsDevelopment())
+    {
+        var testUsers = scope.ServiceProvider
+            .GetRequiredService<DevelopmentTestUserSeeder>();
+        await testUsers.SeedAsync();
+        app.Logger.LogInformation("Development test users are available.");
+
+        var sampleData = scope.ServiceProvider
+            .GetRequiredService<DevelopmentSampleDataSeeder>();
+        await sampleData.SeedAsync();
+        app.Logger.LogInformation("Development sample data is available.");
+    }
+}
 
 app.UseExceptionHandler();
 

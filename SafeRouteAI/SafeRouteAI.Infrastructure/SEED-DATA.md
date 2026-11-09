@@ -1,28 +1,26 @@
 # Sample database seed data
 
-This document describes the sample rows from the DBeaver T-SQL seed script
-shared in the project conversation. It is a record of the intended dataset,
-not a confirmation that every row was inserted into a particular database.
-The script must be executed against `SafeRouteDomainTest` for these rows to
-appear there.
+This document describes the illustrative development data inserted by
+`DevelopmentSampleDataSeeder` when the API starts in the `Development`
+environment. It is inserted into the database configured for that API
+instance; the database name may differ by machine.
 
 The sample uses generated identity keys. Relationships below are described by
 their natural identifiers and values, not fixed numeric IDs; the actual IDs
 depend on the database's contents when the script runs.
 
-## Users
+## Development users
 
 | Name | Email | Role | Registered (UTC) | Password hash |
 |---|---|---|---|---|
-| Seed Route User | `seed-route-user@example.test` | User | 2026-01-15 09:00 | `SEED_DATA_NOT_A_LOGIN_HASH` |
-| Seed Reviewer | `seed-reviewer@example.test` | Admin | 2026-01-15 09:05 | `SEED_DATA_NOT_A_LOGIN_HASH` |
+| SafeRoute Test User | `safertest.user@example.test` | User | Created at first seed | Hashed development test password |
+| SafeRoute Test Admin | `safertest.admin@example.test` | Admin | Created at first seed | Hashed development test password |
 
-The password values are placeholders, not password hashes. These sample
-accounts must not be used for authentication.
+See the Infrastructure README for the development-only test credentials.
 
 ## Routes
 
-Both routes belong to Seed Route User.
+Both routes belong to SafeRoute Test User.
 
 | Origin | Destination | Requested (UTC) |
 |---|---|---|
@@ -71,16 +69,15 @@ coordinates.
 
 ## Community reports
 
-Both reports were submitted by Seed Route User.
+Both reports were submitted by SafeRoute Test User.
 
 | Location (latitude, longitude) | Incident | Description | Reported (UTC) | Status | Reviewer | Reviewed (UTC) |
 |---|---|---|---|---|---|---|
-| (-26.205000, 28.050000) | Hazard | Sample road hazard report. | 2026-01-16 08:10 | Reviewed | Seed Reviewer | 2026-01-16 08:20 |
-| (-26.207000, 28.053000) | Lighting | Sample report of poor lighting. | 2026-01-16 18:30 | Pending | Seed Reviewer | NULL |
+| (-26.205000, 28.050000) | Hazard | Sample road hazard report. | 2026-01-17 08:10 | Reviewed | SafeRoute Test Admin | 2026-01-17 08:20 |
+| (-26.207000, 28.053000) | Lighting | Sample report of poor lighting. | 2026-01-17 18:30 | Pending | — | NULL |
 
-The second row's reviewer is assigned by the shared script even though its
-status is Pending and `reviewed_at` is NULL. This is simply what the seed
-statement specifies; the database does not enforce status semantics.
+The application treats `Reviewed` as an already-reviewed, publicly visible
+report state and `Pending` as awaiting moderation.
 
 ## Route risk logs
 
@@ -129,11 +126,9 @@ intended to add the following 29 rows:
 | `model_versions` | 2 |
 | **Total** | **29** |
 
-These are expected counts for the described dataset, not guaranteed insert
-counts. The script uses existence checks to avoid adding matching rows again;
-if a prerequisite row is missing, dependent inserts can insert zero rows.
-DBeaver's affected-row message may report only the currently executed
-statement. Check each table's row count to verify the database contents.
+The sample data seeder checks identifying values before inserting records, so
+restarting the API does not duplicate the sample rows. The two test users are
+seeded separately; including them, the intended dataset contains 29 rows.
 
 The sample data is illustrative. It is not production data and does not
 represent validated risk predictions, real incidents, actual route provider

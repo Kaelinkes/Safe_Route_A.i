@@ -10,7 +10,9 @@ public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
         var connectionString =
             Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
             ?? Environment.GetEnvironmentVariable("SAFEROUTE_TEST_CONNECTION_STRING")
-            ?? AppDbContext.DefaultConnection;
+            ?? throw new InvalidOperationException(
+                "Set ConnectionStrings__DefaultConnection or " +
+                "SAFEROUTE_TEST_CONNECTION_STRING for EF design-time operations.");
 
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseSqlServer(connectionString)

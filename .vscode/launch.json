@@ -6,7 +6,28 @@
       "type": "dotnet",
       "request": "launch",
       "projectPath": "${workspaceFolder}/SafeRouteAI/SafeRouteAI.API/SafeRouteAI.API.csproj",
-      "launchSettingsProfile": "https"
+      "launchSettingsProfile": "http",
+      "console": "internalConsole",
+      "serverReadyAction": {
+        "action": "startDebugging",
+        "name": "Launch SafeRouteAI Views",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
+        "killOnServerStop": true
+      }
+    },
+    {
+      "name": "Launch SafeRouteAI Views",
+      "type": "dotnet",
+      "request": "launch",
+      "projectPath": "${workspaceFolder}/SafeRouteAI/SafeRouteAI.Web/SafeRouteAI.Web.csproj",
+      "launchSettingsProfile": "http",
+      "console": "internalConsole",
+      "serverReadyAction": {
+        "action": "debugWithEdge",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)",
+        "webRoot": "${workspaceFolder}/SafeRouteAI/SafeRouteAI.Web",
+        "killOnServerStop": true
+      }
     }
   ]
 }
