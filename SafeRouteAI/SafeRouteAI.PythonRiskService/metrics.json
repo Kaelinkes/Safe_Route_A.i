@@ -1,0 +1,11 @@
+{
+  "rmse": 0.056208835341560875,
+  "band_accuracy_all": 0.8066170292899151,
+  "confident_share_margin_0.04": 0.6605440797288292,
+  "band_accuracy_confident": 0.8972076023391813,
+  "cutoffs": [
+    0.27,
+    0.41
+  ],
+  "iterations": 482
+}

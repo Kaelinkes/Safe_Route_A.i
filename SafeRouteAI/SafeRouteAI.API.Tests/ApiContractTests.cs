@@ -1,8 +1,17 @@
 
+using System;
+using System.Collections.Generic;
 using System.Net;
+using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using SafeRouteAI.API.Interfaces;
+using SafeRouteAI.API.Services;
 using Xunit;
 
 namespace SafeRouteAI.API.Tests;
@@ -12,20 +21,64 @@ public class ApiContractTests :
 {
     private readonly HttpClient _client;
 
-    public ApiContractTests(WebApplicationFactory<Program> factory)
+    public ApiContractTests(
+        WebApplicationFactory<Program> factory)
     {
-        _client = factory.CreateClient();
+        var configuredFactory = factory.WithWebHostBuilder(
+            builder =>
+            {
+                builder.ConfigureAppConfiguration(
+                    (_, configuration) =>
+                    {
+                        configuration.AddInMemoryCollection(
+                            new Dictionary<string, string?>
+                            {
+                                ["RoutingIntegration:Provider"] =
+                                    "Unavailable",
+
+                                ["MlIntegration:Provider"] =
+                                    "Mock"
+                            });
+                    });
+
+                // Keep routing unavailable for contract tests.
+                builder.ConfigureTestServices(services =>
+                {
+                    services.RemoveAll<IRouteComparisonService>();
+
+                    services.AddScoped<
+                        IRouteComparisonService,
+                        RouteComparisonService>();
+
+                    // Force the actual mock prediction service
+                    // for API contract tests, regardless of
+                    // production configuration.
+                    services.RemoveAll<IRiskPredictionService>();
+
+                    services.AddScoped<
+                        IRiskPredictionService,
+                        MockRiskPredictionService>();
+                });
+            });
+
+        _client = configuredFactory.CreateClient();
     }
 
     [Fact]
     public async Task Health_ReturnsRunning()
     {
-        var response = await _client.GetAsync("/api/v1/health");
+        var response = await _client.GetAsync(
+            "/api/v1/health");
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(
+            HttpStatusCode.OK,
+            response.StatusCode);
 
         var body = await response.Content.ReadAsStringAsync();
-        Assert.Contains("Running", body,
+
+        Assert.Contains(
+            "Running",
+            body,
             StringComparison.OrdinalIgnoreCase);
     }
 
@@ -43,19 +96,26 @@ public class ApiContractTests :
         };
 
         var response = await _client.PostAsJsonAsync(
-            "/api/v1/risk/predict", request);
+            "/api/v1/risk/predict",
+            request);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(
+            HttpStatusCode.OK,
+            response.StatusCode);
 
         using var json = JsonDocument.Parse(
             await response.Content.ReadAsStringAsync());
 
         Assert.True(
-            json.RootElement.GetProperty("isMock").GetBoolean());
+            json.RootElement
+                .GetProperty("isMock")
+                .GetBoolean());
 
         Assert.Equal(
             "InsufficientData",
-            json.RootElement.GetProperty("riskLevel").GetString());
+            json.RootElement
+                .GetProperty("riskLevel")
+                .GetString());
     }
 
     [Fact]
@@ -76,7 +136,8 @@ public class ApiContractTests :
         };
 
         var response = await _client.PostAsJsonAsync(
-            "/api/v1/routes/compare", request);
+            "/api/v1/routes/compare",
+            request);
 
         Assert.Equal(
             HttpStatusCode.ServiceUnavailable,
@@ -87,11 +148,15 @@ public class ApiContractTests :
 
         Assert.Equal(
             503,
-            json.RootElement.GetProperty("status").GetInt32());
+            json.RootElement
+                .GetProperty("status")
+                .GetInt32());
 
         Assert.Equal(
             "Routing service unavailable",
-            json.RootElement.GetProperty("title").GetString());
+            json.RootElement
+                .GetProperty("title")
+                .GetString());
     }
 
     [Fact]
@@ -107,7 +172,8 @@ public class ApiContractTests :
         };
 
         var response = await _client.PostAsJsonAsync(
-            "/api/v1/risk/predict", request);
+            "/api/v1/risk/predict",
+            request);
 
         Assert.Equal(
             HttpStatusCode.BadRequest,
@@ -132,7 +198,8 @@ public class ApiContractTests :
         };
 
         var response = await _client.PostAsJsonAsync(
-            "/api/v1/routes/compare", request);
+            "/api/v1/routes/compare",
+            request);
 
         Assert.Equal(
             HttpStatusCode.BadRequest,
@@ -156,7 +223,8 @@ public class ApiContractTests :
         };
 
         var response = await _client.PostAsJsonAsync(
-            "/api/v1/routes/compare", request);
+            "/api/v1/routes/compare",
+            request);
 
         Assert.Equal(
             HttpStatusCode.BadRequest,
@@ -173,7 +241,8 @@ public class ApiContractTests :
         };
 
         var response = await _client.PostAsJsonAsync(
-            "/api/v1/risk/predict", request);
+            "/api/v1/risk/predict",
+            request);
 
         Assert.Equal(
             HttpStatusCode.BadRequest,

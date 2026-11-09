@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using SafeRouteAI.API.DTOs;
 using SafeRouteAI.API.Interfaces;
-using SafeRouteAI.API.Services;
 using SafeRouteAI.Application.Exceptions;
 
 namespace SafeRouteAI.API.Controllers;
@@ -51,7 +50,7 @@ public class RoutesController : ControllerBase
                 title: "Route not found",
                 detail: "No valid driving route could be found for the supplied locations.");
         }
-        catch (RouteServiceUnavailableException ex)
+        catch (SafeRouteAI.API.Services.RouteServiceUnavailableException ex)
         {
             _logger.LogError(
                 ex,

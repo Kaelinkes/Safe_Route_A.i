@@ -1,9 +1,13 @@
 
+using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using SafeRouteAI.API.Interfaces;
 using SafeRouteAI.API.Services;
 using Xunit;
@@ -28,9 +32,28 @@ public class RoutingIntegrationTests
                                     "Unavailable"
                             });
                     });
+
+                // Override production service registration
+                // after the application has configured its services.
+                builder.ConfigureTestServices(services =>
+                {
+                    services.RemoveAll<IRouteComparisonService>();
+
+                    services.AddScoped<
+                        IRouteComparisonService,
+                        RouteComparisonService>();
+                });
             });
 
         using var client = factory.CreateClient();
+
+        using var scope = factory.Services.CreateScope();
+
+        var routingService = scope.ServiceProvider
+            .GetRequiredService<IRouteComparisonService>();
+
+        // Verify the correct test service is selected.
+        Assert.IsType<RouteComparisonService>(routingService);
 
         var response = await client.PostAsJsonAsync(
             "/api/v1/routes/compare",
@@ -73,9 +96,8 @@ public class RoutingIntegrationTests
         using var provider = services.BuildServiceProvider();
         using var scope = provider.CreateScope();
 
-        var routingService =
-            scope.ServiceProvider
-                .GetRequiredService<IRouteComparisonService>();
+        var routingService = scope.ServiceProvider
+            .GetRequiredService<IRouteComparisonService>();
 
         Assert.IsType<BackendRouteComparisonService>(
             routingService);

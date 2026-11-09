@@ -1,5 +1,6 @@
 
 using SafeRouteAI.API.DTOs.Enums;
+using SafeRouteAI.API.Services.BackendContracts;
 
 namespace SafeRouteAI.API.DTOs;
 
@@ -26,4 +27,6 @@ public class RouteOptionResponse
     public double? RiskScore { get; set; }
 
     public string? Geometry { get; set; }
+public List<BackendRoadSegmentAttribute> RoadSegments
+    { get; set; } = new();
 }
