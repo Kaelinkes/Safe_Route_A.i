@@ -8,8 +8,16 @@ public record RouteOptionDto(
     string RouteId,
     double DistanceKm,
     double DurationMinutes,
-    string Geometry);
+    string Geometry)
+{
+    public List<RoadSegmentAttributeDto> RoadSegments { get; init; } = [];
+}
 
+public record RoadSegmentAttributeDto(
+    int FromIndex,
+    int ToIndex,
+    string Attribute,
+    string Value);
 public record WeatherResult(
     bool IsAvailable,
     double Precipitation,

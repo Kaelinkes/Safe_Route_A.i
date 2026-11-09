@@ -30,11 +30,61 @@ public static class RoutingIntegrationExtensions
                 break;
 
             case "backend":
-                // Provide configuration to Backend services.
+                // Provide configuration to backend services.
                 services.AddSingleton<IConfiguration>(configuration);
 
-                // Keep existing routing registration behavior
-                // for API tests and standalone consumers.
+                // Ensure standalone routing registration can
+                // resolve the Python route prediction client.
+                //
+                // Program.cs already calls AddMlIntegration(),
+                // so avoid registering the client twice.
+                if (!services.Any(descriptor =>
+                        descriptor.ServiceType ==
+                        typeof(PythonRoutePredictionClient)))
+                {
+                    var mlSection = configuration.GetSection(
+                        MlIntegrationOptions.SectionName);
+
+                    var baseUrl = mlSection["BaseUrl"];
+
+                    if (string.IsNullOrWhiteSpace(baseUrl))
+                    {
+                        baseUrl = "http://127.0.0.1:8006/";
+                    }
+
+                    // Validate the Python service address.
+                    if (!Uri.TryCreate(
+                            baseUrl,
+                            UriKind.Absolute,
+                            out var uri) ||
+                        (uri.Scheme != Uri.UriSchemeHttp &&
+                         uri.Scheme != Uri.UriSchemeHttps))
+                    {
+                        throw new InvalidOperationException(
+                            "MlIntegration:BaseUrl must be " +
+                            "a valid HTTP URL.");
+                    }
+
+                    var normalizedBaseUrl = new Uri(
+                        uri.AbsoluteUri.TrimEnd('/') + "/");
+
+                    var timeoutSeconds = int.TryParse(
+                        mlSection["TimeoutSeconds"],
+                        out var seconds) && seconds > 0
+                            ? seconds
+                            : 90;
+
+                    services.AddHttpClient<
+                        PythonRoutePredictionClient>(client =>
+                    {
+                        client.BaseAddress = normalizedBaseUrl;
+
+                        client.Timeout = TimeSpan.FromSeconds(
+                            timeoutSeconds);
+                    });
+                }
+
+                // Register existing infrastructure services.
                 services.AddInfrastructure();
 
                 var riskProvider =
@@ -54,13 +104,16 @@ public static class RoutingIntegrationExtensions
 
                     default:
                         throw new InvalidOperationException(
-                            $"Unsupported route risk provider '{riskProvider}'.");
+                            $"Unsupported route risk provider " +
+                            $"'{riskProvider}'.");
                 }
 
+                // Register the real backend route client.
                 services.AddScoped<
                     IBackendRouteClient,
                     RealBackendRouteClient>();
 
+                // Register the backend route comparison adapter.
                 services.AddScoped<
                     IRouteComparisonService,
                     BackendRouteComparisonService>();

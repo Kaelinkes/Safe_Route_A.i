@@ -1,6 +1,4 @@
 
-using SafeRouteAI.API.DTOs;
-using SafeRouteAI.API.Interfaces;
 using SafeRouteAI.Application.DTOs;
 using SafeRouteAI.Application.Interfaces;
 using SafeRouteAI.Domain.Enums;
@@ -9,12 +7,11 @@ namespace SafeRouteAI.API.Services;
 
 public sealed class ApiRiskServiceBridge : IRiskService
 {
-    private readonly IRiskPredictionService _predictions;
+    private readonly PythonRoutePredictionClient _python;
 
-    public ApiRiskServiceBridge(
-        IRiskPredictionService predictions)
+    public ApiRiskServiceBridge(PythonRoutePredictionClient python)
     {
-        _predictions = predictions;
+        _python = python;
     }
 
     public async Task<RiskAssessmentDto> AssessAsync(
@@ -22,64 +19,72 @@ public sealed class ApiRiskServiceBridge : IRiskService
         WeatherResult weather,
         CancellationToken cancellationToken = default)
     {
-        if (!weather.IsAvailable)
+        if (string.IsNullOrWhiteSpace(route.Geometry))
         {
             return new RiskAssessmentDto(
                 AssessmentStatus.InsufficientData,
                 null,
                 null,
-                new List<string>());
+                ["Route geometry is missing."]);
         }
 
-        var request = new RiskPredictionRequest
-        {
-            SegmentId = route.RouteId,
-            Features = new Dictionary<string, double>
-            {
-                ["distanceKm"] = route.DistanceKm,
-                ["durationMinutes"] = route.DurationMinutes,
-                ["precipitation"] = weather.Precipitation,
-                ["visibility"] = weather.Visibility,
-                ["windSpeed"] = weather.WindSpeed,
-                ["temperature"] = weather.Temperature,
-                ["humidity"] = weather.Humidity
-            }
-        };
-
-        var prediction = await _predictions.PredictAsync(
-            request,
+        // Python retrieves weather and road information
+        // and evaluates the route segments.
+        var response = await _python.PredictRouteAsync(
+            route.Geometry,
             cancellationToken);
 
-        if (prediction.RiskScore is null ||
-            prediction.RiskLevel ==
-                SafeRouteAI.API.DTOs.Enums.RiskLevel.InsufficientData)
+        var predictions = response.Results
+            .Where(p =>
+                p.RiskScore.HasValue &&
+                double.IsFinite(p.RiskScore.Value))
+            .ToList();
+
+        if (predictions.Count == 0)
         {
+            var missing = response.Results
+                .SelectMany(p => p.MissingFields)
+                .Distinct()
+                .ToList();
+
+            if (missing.Count == 0)
+                missing.Add("Python could not assess any route segments.");
+
             return new RiskAssessmentDto(
                 AssessmentStatus.InsufficientData,
                 null,
                 null,
-                new List<string>());
+                missing);
         }
 
-        var level = prediction.RiskLevel switch
+        // Use the highest-risk assessed segment as the
+        // overall route risk.
+        var worst = predictions
+            .OrderByDescending(p => p.RiskScore!.Value)
+            .First();
+
+        var score = worst.RiskScore!.Value;
+
+        var level = Enum.TryParse<RiskLevel>(
+            worst.RiskLevel,
+            true,
+            out var parsedLevel)
+                ? parsedLevel
+                : score <= 0.27
+                    ? RiskLevel.Low
+                    : score <= 0.41
+                        ? RiskLevel.Medium
+                        : RiskLevel.High;
+
+        var factors = new List<string>
         {
-            SafeRouteAI.API.DTOs.Enums.RiskLevel.Low =>
-                SafeRouteAI.Domain.Enums.RiskLevel.Low,
-
-            SafeRouteAI.API.DTOs.Enums.RiskLevel.Medium =>
-                SafeRouteAI.Domain.Enums.RiskLevel.Medium,
-
-            SafeRouteAI.API.DTOs.Enums.RiskLevel.High =>
-                SafeRouteAI.Domain.Enums.RiskLevel.High,
-
-            _ => throw new InvalidOperationException(
-                "Unsupported ML risk level.")
+            $"Python assessed {predictions.Count} route segments."
         };
 
         return new RiskAssessmentDto(
             AssessmentStatus.Valid,
-            prediction.RiskScore,
+            score,
             level,
-            new List<string>());
+            factors);
     }
 }

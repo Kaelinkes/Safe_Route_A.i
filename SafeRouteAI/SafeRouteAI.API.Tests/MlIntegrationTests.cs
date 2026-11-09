@@ -1,10 +1,15 @@
 
+using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using SafeRouteAI.API.Interfaces;
 using SafeRouteAI.API.Services;
 using Xunit;
 
@@ -15,7 +20,10 @@ public class MlIntegrationTests
     [Fact]
     public async Task DefaultProvider_ReturnsMockPrediction()
     {
-        using var factory = new WebApplicationFactory<Program>();
+        // The production default is Python.
+        // Explicitly select Mock for this test.
+        using var factory = CreateMockFactory();
+
         using var client = factory.CreateClient();
 
         var request = new
@@ -31,19 +39,26 @@ public class MlIntegrationTests
         };
 
         var response = await client.PostAsJsonAsync(
-            "/api/v1/risk/predict", request);
+            "/api/v1/risk/predict",
+            request);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(
+            HttpStatusCode.OK,
+            response.StatusCode);
 
         using var json = JsonDocument.Parse(
             await response.Content.ReadAsStringAsync());
 
         Assert.True(
-            json.RootElement.GetProperty("isMock").GetBoolean());
+            json.RootElement
+                .GetProperty("isMock")
+                .GetBoolean());
 
         Assert.Equal(
             "InsufficientData",
-            json.RootElement.GetProperty("riskLevel").GetString());
+            json.RootElement
+                .GetProperty("riskLevel")
+                .GetString());
     }
 
     [Fact]
@@ -60,8 +75,10 @@ public class MlIntegrationTests
 
         var services = new ServiceCollection();
 
-        var exception = Assert.Throws<InvalidOperationException>(
-            () => services.AddMlIntegration(configuration));
+        var exception =
+            Assert.Throws<InvalidOperationException>(
+                () => services.AddMlIntegration(
+                    configuration));
 
         Assert.Contains(
             "Unsupported ML provider",
@@ -71,19 +88,7 @@ public class MlIntegrationTests
     [Fact]
     public async Task ExplicitMockProvider_ReturnsMockPrediction()
     {
-        using var factory = new WebApplicationFactory<Program>()
-            .WithWebHostBuilder(builder =>
-            {
-                builder.ConfigureAppConfiguration(
-                    (context, configuration) =>
-                    {
-                        configuration.AddInMemoryCollection(
-                            new Dictionary<string, string?>
-                            {
-                                ["MlIntegration:Provider"] = "Mock"
-                            });
-                    });
-            });
+        using var factory = CreateMockFactory();
 
         using var client = factory.CreateClient();
 
@@ -99,12 +104,105 @@ public class MlIntegrationTests
                 }
             });
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(
+            HttpStatusCode.OK,
+            response.StatusCode);
 
         using var json = JsonDocument.Parse(
             await response.Content.ReadAsStringAsync());
 
         Assert.True(
-            json.RootElement.GetProperty("isMock").GetBoolean());
+            json.RootElement
+                .GetProperty("isMock")
+                .GetBoolean());
+
+        Assert.Equal(
+            "InsufficientData",
+            json.RootElement
+                .GetProperty("riskLevel")
+                .GetString());
+    }
+
+    [Fact]
+    public void MockProvider_RegistersMockRiskPredictionService()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(
+                new Dictionary<string, string?>
+                {
+                    ["MlIntegration:Provider"] = "Mock"
+                })
+            .Build();
+
+        var services = new ServiceCollection();
+
+        services.AddMlIntegration(configuration);
+
+        var registration =
+            Assert.Single(
+                services,
+                service =>
+                    service.ServiceType ==
+                    typeof(IRiskPredictionService));
+
+        Assert.Equal(
+            typeof(MockRiskPredictionService),
+            registration.ImplementationType);
+    }
+
+    [Fact]
+    public void PythonProvider_RegistersPythonRiskPredictionService()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(
+                new Dictionary<string, string?>
+                {
+                    ["MlIntegration:Provider"] = "Python"
+                })
+            .Build();
+
+        var services = new ServiceCollection();
+
+        services.AddMlIntegration(configuration);
+
+        var registration =
+            Assert.Single(
+                services,
+                service =>
+                    service.ServiceType ==
+                    typeof(IRiskPredictionService));
+
+        Assert.NotNull(registration.ImplementationFactory);
+    }
+
+    private static WebApplicationFactory<Program>
+        CreateMockFactory()
+    {
+        return new WebApplicationFactory<Program>()
+            .WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureAppConfiguration(
+                    (_, configuration) =>
+                    {
+                        configuration.AddInMemoryCollection(
+                            new Dictionary<string, string?>
+                            {
+                                ["MlIntegration:Provider"] =
+                                    "Mock"
+                            });
+                    });
+
+                // Explicitly select Mock in the test host.
+                // This does not affect production registration.
+                builder.ConfigureTestServices(services =>
+                {
+                    services.RemoveAll<
+                        IRiskPredictionService>();
+
+                    services.AddScoped<
+                        IRiskPredictionService,
+                        MockRiskPredictionService>();
+                });
+            });
     }
 }
